@@ -24,13 +24,11 @@ export default function Reunioes({ setTela }) {
                 <ScrollView
             >
 
-                {/* TÍTULO */}
                 <Text style={styles.titulo}>
 
                 </Text>
 
 
-                {/* CARD SUAS REUNIÕES */}
                 <View style={styles.cardTopo}>
 
                     <Text style={styles.tituloSuasReunioes}>
@@ -42,10 +40,8 @@ export default function Reunioes({ setTela }) {
                 </View>
 
 
-                {/* FILTRO */}
                 <View style={styles.abas}>
 
-                    {/* PRÓXIMAS */}
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("proximas")}
@@ -67,7 +63,6 @@ export default function Reunioes({ setTela }) {
                     </TouchableOpacity>
 
 
-                    {/* REALIZADAS */}
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("realizadas")}
@@ -91,15 +86,12 @@ export default function Reunioes({ setTela }) {
                 </View>
 
 
-                {/* ========================================= */}
-                {/* PRÓXIMAS */}
-                {/* ========================================= */}
+
 
                 {filtro === "proximas" && (
 
                     <View style={styles.cardReuniao}>
 
-                        {/* TÍTULO DA REUNIÃO */}
                         <View style={styles.linhaPrincipal}>
 
                             <View style={styles.iconeRelogio}>
@@ -119,7 +111,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* DATA */}
                         <View style={styles.informacao}>
 
                             <Ionicons
@@ -135,7 +126,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* HORÁRIO */}
                         <View style={styles.informacao}>
 
                             <Ionicons
@@ -151,7 +141,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* LOCAL */}
                         <View style={styles.informacao}>
 
                             <Ionicons
@@ -167,7 +156,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* STATUS */}
                         <View style={styles.areaStatus}>
 
                             <View style={styles.statusConfirmada}>
@@ -185,15 +173,12 @@ export default function Reunioes({ setTela }) {
                 )}
 
 
-                {/* ========================================= */}
-                {/* REALIZADAS */}
-                {/* ========================================= */}
+
 
                 {filtro === "realizadas" && (
 
                     <View style={styles.cardReuniao}>
 
-                        {/* TÍTULO DA REUNIÃO */}
                         <View style={styles.linhaPrincipal}>
 
                             <View style={styles.iconeRealizada}>
@@ -213,7 +198,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* DATA */}
                         <View style={styles.informacao}>
 
                             <Ionicons
@@ -229,7 +213,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* HORÁRIO */}
                         <View style={styles.informacao}>
 
                             <Ionicons
@@ -245,7 +228,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* LOCAL */}
                         <View style={styles.informacao}>
 
                             <Ionicons
@@ -261,7 +243,6 @@ export default function Reunioes({ setTela }) {
                         </View>
 
 
-                        {/* STATUS */}
                         <View style={styles.areaStatus}>
 
                             <View style={styles.statusRealizada}>
@@ -302,7 +283,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* TÍTULO */
 
     titulo: {
         fontSize: 25,
@@ -312,7 +292,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* CARD SUPERIOR */
 
     cardTopo: {
         backgroundColor: "#FFFFFF",
@@ -416,7 +395,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* TÍTULO DO CARD */
 
     linhaPrincipal: {
         flexDirection: "row",
@@ -454,7 +432,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* INFORMAÇÕES */
 
     informacao: {
         flexDirection: "row",
@@ -471,7 +448,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* STATUS */
 
     areaStatus: {
         marginTop: 4,

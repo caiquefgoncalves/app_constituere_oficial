@@ -26,7 +26,6 @@ export default function PagamentoAberto({ setTela }) {
             <ScrollView
             >
 
-                {/* TÍTULO */}
                 <Text style={styles.titulo}>
 
                 </Text>

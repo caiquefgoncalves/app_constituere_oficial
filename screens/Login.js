@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-
-import {
-    View,
-    Text,
-    TextInput,
-    StyleSheet,
-    Image,
-    ActivityIndicator,
-    Alert,
-    TouchableOpacity
-} from "react-native";
-
+import {View, Text, TextInput, StyleSheet, Image, ActivityIndicator, Alert, TouchableOpacity} from "react-native";
 import Botao from "../components/Botao";
 import { login, logout } from "../services/realizarLogin.js";
 

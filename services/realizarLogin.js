@@ -2,11 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { requisicao } from './api';
 import { getBiometria } from './getBiometria';
-import {
-    ativarBiometria,
-    desativarBiometria,
-    biometriaAtiva
-} from './biometriaStorage';
+import {ativarBiometria, desativarBiometria, biometriaAtiva} from './biometriaStorage';
 
 const TIPOS_PERMITIDOS_APP = [2, 3];
 
