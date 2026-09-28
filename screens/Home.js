@@ -1,10 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ImageBackground, StyleSheet, Text, View, Alert } from 'react-native';
+import {
+    Image,
+    ImageBackground,
+    StyleSheet,
+    Text,
+    View,
+    Alert,
+    TouchableOpacity
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Botao from "../components/Botao";
 import { getBiometria } from '../services/getBiometria';
 import { biometriaAtiva, ativarBiometria } from '../services/biometriaStorage';
+import { logout } from '../services/realizarLogin';
 
 function perguntarAtivarBiometria() {
     return new Promise((resolve) => {
@@ -27,10 +36,11 @@ function perguntarAtivarBiometria() {
     });
 }
 
-export default function Home({ navigation }) {
+export function Home({navigation}) {
 
     const [logado, setLogado] = useState(false);
     const [idUsuario, setIdUsuario] = useState(null);
+    const [mostrarBotaoLogin, setMostrarBotaoLogin] = useState(false);
 
     useEffect(() => {
         let ativo = true;
@@ -86,6 +96,8 @@ export default function Home({ navigation }) {
                             'Biometria não reconhecida',
                             'Não foi possível ativar a biometria. Você pode tentar novamente depois.'
                         );
+                        setMostrarBotaoLogin(true);
+                        return;
                     }
                 }
 
@@ -102,32 +114,66 @@ export default function Home({ navigation }) {
                     'Biometria não reconhecida',
                     'Não foi possível confirmar sua identidade. Tente novamente.'
                 );
+                setMostrarBotaoLogin(true);
             }
         } catch (erro) {
             console.log('[HOME] Erro ao validar biometria:', erro);
             Alert.alert('Erro', 'Não foi possível validar sua biometria.');
+            setMostrarBotaoLogin(true);
         }
+    }
+
+    async function realizarLoginNovamente() {
+        await logout();
+
+        setLogado(false);
+        setIdUsuario(null);
+        setMostrarBotaoLogin(false);
+
+        navigation.reset({
+            index: 0,
+            routes: [{name: 'Login'}]
+        });
     }
 
     return (
         <ImageBackground source={require("../assets/telaInicial.png")} resizeMode="cover" style={styles.background}>
             <View style={styles.container}>
+
                 <View style={styles.header}>
-                    <Image style={styles.logo} source={require("../assets/logoMenor.png")} />
+                    <Image style={styles.logo} source={require("../assets/logoMenor.png")}/>
                 </View>
+
                 <LinearGradient
                     colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.5)', '#000000']}
                     style={styles.transicaoGradiente}
                 />
+
                 <View style={styles.main}>
                     <Text style={styles.texto}>Vivendo o direito de um novo jeito</Text>
-                    <View style={styles.botao}>
-                        <Botao
-                            texto={"Acesse a plataforma"}
-                            acao={acessarPlataforma}
-                        />
+
+                    <View style={styles.areaInferior}>
+                        <View style={styles.botao}>
+                            <Botao
+                                texto={"Acesse a plataforma"}
+                                acao={acessarPlataforma}
+                            />
+                        </View>
+
+                        {logado && mostrarBotaoLogin && (
+                            <TouchableOpacity
+                                style={styles.botaoRealizarLogin}
+                                onPress={realizarLoginNovamente}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles.textoBotaoRealizarLogin}>
+                                    Realizar login
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
+
             </View>
         </ImageBackground>
     );
@@ -166,14 +212,33 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         fontSize: 35,
         fontFamily: "Inter_900Black",
-        maxWidth: "90%"
+        maxWidth: "90%",
     },
-    logo: {
-        width: 90,
-        height: 75,
+    areaInferior: {
+        width: '100%',
+        alignItems: 'flex-end',
+        gap: 12,
     },
     botao: {
         alignItems: "flex-end",
+    },
+    botaoRealizarLogin: {
+        paddingVertical: 10,
+        paddingHorizontal: 25,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderColor: "#FFFFFF",
+        borderWidth: 0.9,
+
+    },
+    textoBotaoRealizarLogin: {
+        color: 'white',
+        fontSize: 15,
+        textAlign: 'center',
+        marginBottom: 2,
+        fontFamily: 'Inter_700Bold',
+
     },
     transicaoGradiente: {
         width: '100%',

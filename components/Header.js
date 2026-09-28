@@ -1,35 +1,13 @@
-import { Image, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { logout } from "../services/realizarLogin";
 
 export default function Header({ navigation }) {
 
     const lidarComSair = () => {
-        Alert.alert(
-            'Sair da conta',
-            'Tem certeza que deseja sair?',
-            [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Sair',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await logout();
-
-                        if (navigation) {
-                            navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'Login' }]
-                            });
-                        }
-                    }
-                }
-            ]
-        );
+        if (navigation) {
+            navigation.replace("Login");
+        }
     };
 
     return (
@@ -43,13 +21,12 @@ export default function Header({ navigation }) {
 
                 <View style={styles.acoesDireita}>
 
-                    <TouchableOpacity style={styles.botaoNotificacao} activeOpacity={0.7}>
+                    <TouchableOpacity style={styles.botaoNotificacao} onPress={() => navigation.navigate("Notificacoes")}>
                         <Ionicons
                             name="notifications-outline"
                             size={35}
                             color="white"
                         />
-                        <View style={styles.badgeNotificacao} />
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -98,16 +75,6 @@ const styles = StyleSheet.create({
         height: 35,
         alignItems: "center",
         justifyContent: "center",
-        position: "relative",
-    },
-    badgeNotificacao: {
-        position: "absolute",
-        top: 4,
-        right: 4,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: "#0047AB",
     },
     botaoSair: {
         width: 35,

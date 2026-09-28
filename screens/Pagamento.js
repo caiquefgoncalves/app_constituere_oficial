@@ -115,14 +115,12 @@ export default function PagamentoAberto({ navigation }) {
                 )}
 
 
-                {/* A VENCER */}
                 {filtro === "aberto" && (
                     <CardPagamento titulo={"Pró-labore"} valor={"300,00"} status={"aberto"} data={"01/10/2026"}/>
 
                 )}
 
 
-                {/* PAGOS */}
                 {filtro === "pagos" && (
                     <CardPagamento titulo={"Entrada"} valor={"1.000,00"} status={"pago"} data={"01/07/2026"}/>
 
@@ -169,8 +167,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* RESUMO */
-
     resumo: {
         flexDirection: "row",
         alignItems: "center",
@@ -183,7 +179,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
 
-    /* ABAS */
 
     abas: {
         width: "100%",
@@ -219,7 +214,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* CARD */
 
     cardPagamento: {
         width: "100%",
@@ -293,7 +287,6 @@ const styles = StyleSheet.create({
     },
 
 
-    /* INFORMAÇÕES */
 
     informacoes: {
         flexDirection: "row",

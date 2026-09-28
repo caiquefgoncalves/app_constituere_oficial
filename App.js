@@ -20,6 +20,13 @@ import iconeReunioesInativo from "./assets/iconeReunioesInativo.png";
 import {Image, View} from "react-native";
 import Reunioes from "./screens/Reunioes";
 import RedefinirSenha from "./screens/RedefinirSenha";
+import AgendarReuniao from "./screens/AgendarReuniao";
+import Notificacoes from "./screens/Notificacoes";
+import Processos from "./screens/Processos";
+import ReagendarReuniao from "./screens/ReagendarReuniao";
+import Perfil from "./screens/Perfil";
+import PrimeiroLogin from "./screens/PrimeiroLogin";
+import EditarPerfil from "./screens/EditarPerfil";
 
 
 const Stack = createNativeStackNavigator();
@@ -159,7 +166,7 @@ function HomeTabs() {
 
             <Tab.Screen
                 name="Processos"
-                component={Dashboard}
+                component={Processos}
                 options={{
                     title: 'Processos',
                 }}
@@ -167,7 +174,7 @@ function HomeTabs() {
 
             <Tab.Screen
                 name="Perfil"
-                component={Dashboard}
+                component={Perfil}
                 options={{
                     title: 'Perfil',
                 }}
@@ -195,9 +202,12 @@ export default function App() {
                 <Stack.Screen name="Home" component={Home} />
                 <Stack.Screen name="Login" component={Login} />
                 <Stack.Screen name="Dashboard" component={HomeTabs} />
-                <Stack.Screen name="Pagamento" component={Pagamento} />
-                <Stack.Screen name="Reunioes" component={Reunioes} />
-                <Stack.Screen name={"RedefinirSenha"} component={RedefinirSenha} />
+                <Stack.Screen name="PrimeiroLogin" component={PrimeiroLogin} />
+                <Stack.Screen name="RedefinirSenha" component={RedefinirSenha} />
+                <Stack.Screen name="AgendarReuniao" component={AgendarReuniao}/>
+                <Stack.Screen name="ReagendarReuniao" component={ReagendarReuniao}/>
+                <Stack.Screen name="Notificacoes" component={Notificacoes} />
+                <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
             </Stack.Navigator>
         </NavigationContainer>
     )

@@ -3,19 +3,18 @@ import { Ionicons } from "@expo/vector-icons";
 import Botao from "./Botao";
 import React from "react";
 
-export default function CardPagamento({ dashboard = "", status = "pago", titulo, valor, data }) {
+export default function CardPagamento({ dashboard = "", status = "pago", titulo, valor, data, acao }) {
 
     const Vencido = status === "vencido";
     const Aberto = status === "aberto";
     const Pago = status === "pagos" || status === "pago";
 
-    // Define as cores baseadas no status atual
     const corStatus = Vencido ? "#FF4D55" : Aberto ? "#E6B000" : "#59A83B";
     const fundoIcone = Vencido ? "#FFE9EA" : Aberto ? "#FFF9E6" : "#EBF6E9";
     const nomeIcone = Pago ? "checkmark-done-outline" : "document-outline";
 
     return (
-        <TouchableOpacity style={styles.cardPagamento}>
+        <TouchableOpacity style={styles.cardPagamento} onPress={acao}>
 
             <View style={styles.topoCard}>
 
@@ -47,7 +46,6 @@ export default function CardPagamento({ dashboard = "", status = "pago", titulo,
 
             <View style={styles.informacoes}>
 
-                {/* VENCIMENTO / CONFIRMAÇÃO */}
                 <View style={styles.blocoInformacao}>
                     <View style={styles.infoTitulo}>
                         <Ionicons
@@ -65,7 +63,6 @@ export default function CardPagamento({ dashboard = "", status = "pago", titulo,
                     </Text>
                 </View>
 
-                {/* BOTÃO OU BADGE DE CONFIRMAÇÃO */}
                 <View style={styles.blocoInformacao}>
                     {Pago ? (
                         <View style={styles.statusPago}>

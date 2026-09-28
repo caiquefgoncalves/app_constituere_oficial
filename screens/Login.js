@@ -59,7 +59,7 @@ export default function Login({ navigation }) {
         }
 
         if (resultado.precisaRedefinirSenha) {
-            navigation.navigate("RedefinirSenha");
+            navigation.navigate("PrimeiroLogin");
             return;
         }
 
