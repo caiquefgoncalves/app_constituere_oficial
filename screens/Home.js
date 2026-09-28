@@ -29,7 +29,6 @@ function perguntarAtivarBiometria() {
 
 export default function Home({ navigation }) {
 
-    const [verificando, setVerificando] = useState(true);
     const [logado, setLogado] = useState(false);
     const [idUsuario, setIdUsuario] = useState(null);
 
@@ -40,8 +39,14 @@ export default function Home({ navigation }) {
             try {
                 const token = await AsyncStorage.getItem('token');
                 const idSalvo = await AsyncStorage.getItem('id_usuario');
+                const precisaRedefinir = await AsyncStorage.getItem('precisa_redefinir_senha');
 
                 if (!ativo) return;
+
+                if (precisaRedefinir === 'true') {
+                    navigation.navigate('RedefinirSenha');
+                    return;
+                }
 
                 if (token && idSalvo) {
                     setLogado(true);
@@ -49,8 +54,6 @@ export default function Home({ navigation }) {
                 }
             } catch (erro) {
                 console.log('[HOME] Erro ao verificar login:', erro);
-            } finally {
-                if (ativo) setVerificando(false);
             }
         }
 
@@ -78,7 +81,6 @@ export default function Home({ navigation }) {
 
                     if (biometriaOk) {
                         await ativarBiometria(idUsuario);
-                        console.log('[HOME] Biometria ativada para', idUsuario);
                     } else {
                         Alert.alert(
                             'Biometria não reconhecida',
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
         paddingVertical: 60,
     },
     main: {
-        flex: 3,
+        flex: 4,
         width: '100%',
         backgroundColor: "black",
         height: "100%",
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
     texto: {
         color: "white",
         fontWeight: "bold",
-        fontSize: 45,
+        fontSize: 35,
         fontFamily: "Inter_900Black",
         maxWidth: "90%"
     },

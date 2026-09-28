@@ -1,14 +1,17 @@
 import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
-export default function CardDashboard({ texto, acao, icone, numero }) {
+export default function CardValores({ titulo, valor, quantidade}) {
+    const Vencido = titulo === "Vencido";
+    const Aberto = titulo === "Em aberto";
+    const Pago = titulo === "Pago" || titulo === "Pago";
+
+    const corStatus = Vencido ? "#FF4D55" : Aberto ? "#E6B000" : "#59A83B";
+
     return (
-        <TouchableOpacity style={styles.card} onPress={acao}>
-            <View style={styles.topo}>
-                <Image style={styles.icone} source={icone} />
-                <Text style={styles.texto}>{texto}</Text>
-            </View>
-            <Text style={styles.numero}>{numero}</Text>
-        </TouchableOpacity>
+        <View style={styles.card}>
+            <Text style={[styles.texto, { color: corStatus }]}>{titulo}</Text>
+            <Text style={styles.numero}>R$ {valor}</Text>
+        </View>
     );
 }
 
@@ -17,7 +20,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: "white",
         padding: 12,
-        width: "48%",
+        width: 180,
         gap: 5,
         alignItems: "center",
         marginBottom: 10,
@@ -25,9 +28,9 @@ const styles = StyleSheet.create({
     texto: {
         color: '#696969',
         fontSize: 16,
-        textAlign: 'left',
+        textAlign: 'center',
         fontFamily: 'Inter_800ExtraBold',
-        maxWidth: "70%"
+        maxWidth: "90%"
     },
 
     topo: {
@@ -43,7 +46,7 @@ const styles = StyleSheet.create({
     },
 
     numero: {
-        fontSize: 25,
+        fontSize: 20,
         fontFamily: 'Inter_800ExtraBold',
     }
 });

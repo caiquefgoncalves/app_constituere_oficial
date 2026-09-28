@@ -1,9 +1,22 @@
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
-export default function Botao({ texto, acao, cor = 'azul' }) {
+export default function Botao({ texto, acao, cor = 'azul', menor = false }) {
     return (
-        <TouchableOpacity style={[styles.botao, styles[`botao${cor}`]]} onPress={acao}>
-            <Text style={[styles.texto, styles[`texto${cor}`]]}>{texto}</Text>
+        <TouchableOpacity
+            style={[
+                styles.botao,
+                styles[`botao${cor}`],
+                menor && { paddingVertical: 6, paddingHorizontal: 15 }
+            ]}
+            onPress={acao}
+        >
+            <Text style={[
+                styles.texto,
+                styles[`texto${cor}`],
+                menor && { fontSize: 13 }
+            ]}>
+                {texto}
+            </Text>
         </TouchableOpacity>
     );
 }
@@ -21,7 +34,7 @@ const styles = StyleSheet.create({
     },
     texto: {
         color: 'white',
-        fontSize: 18,
+        fontSize: 16,
         textAlign: 'center',
         marginBottom: 2,
         fontFamily: 'Inter_700Bold',

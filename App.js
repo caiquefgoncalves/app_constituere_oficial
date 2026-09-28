@@ -19,6 +19,7 @@ import iconeReunioesAtivo from "./assets/iconeReunioesAtivo.png";
 import iconeReunioesInativo from "./assets/iconeReunioesInativo.png";
 import {Image, View} from "react-native";
 import Reunioes from "./screens/Reunioes";
+import RedefinirSenha from "./screens/RedefinirSenha";
 
 
 const Stack = createNativeStackNavigator();
@@ -40,7 +41,7 @@ function HomeTabs() {
                     right: 15,
                     bottom: 0,
 
-                    height: 90,
+                    height: 120,
 
                     backgroundColor: '#FFFFFF',
 
@@ -194,7 +195,9 @@ export default function App() {
                 <Stack.Screen name="Home" component={Home} />
                 <Stack.Screen name="Login" component={Login} />
                 <Stack.Screen name="Dashboard" component={HomeTabs} />
-                <Stack.Screen name="PagamentoAberto" component={Pagamento} />
+                <Stack.Screen name="Pagamento" component={Pagamento} />
+                <Stack.Screen name="Reunioes" component={Reunioes} />
+                <Stack.Screen name={"RedefinirSenha"} component={RedefinirSenha} />
             </Stack.Navigator>
         </NavigationContainer>
     )

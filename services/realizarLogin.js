@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { requisicao } from './api';
 import { getBiometria } from './getBiometria';
-import {ativarBiometria, desativarBiometria, biometriaAtiva} from './biometriaStorage';
+import { ativarBiometria, desativarBiometria, biometriaAtiva } from './biometriaStorage';
 
 const TIPOS_PERMITIDOS_APP = [2, 3];
 
@@ -33,24 +33,15 @@ export async function login(cpf, senha) {
     console.log('[AUTH] CPF limpo:', cpfLimpo);
 
     if (!cpfLimpo) {
-        return {
-            sucesso: false,
-            mensagem: 'Informe o CPF.'
-        };
+        return { sucesso: false, mensagem: 'Informe o CPF.' };
     }
 
     if (cpfLimpo.length !== 11) {
-        return {
-            sucesso: false,
-            mensagem: 'CPF incompleto.'
-        };
+        return { sucesso: false, mensagem: 'CPF incompleto.' };
     }
 
     if (!senha) {
-        return {
-            sucesso: false,
-            mensagem: 'Informe a senha.'
-        };
+        return { sucesso: false, mensagem: 'Informe a senha.' };
     }
 
     try {
@@ -87,42 +78,48 @@ export async function login(cpf, senha) {
             };
         }
 
+        const precisaRedefinir = dados.primeiro_acesso === true || dados.primeiro_acesso === 1;
+
         try {
             await AsyncStorage.setItem('token', dados.token);
             await AsyncStorage.setItem('nome', dados.nome || '');
             await AsyncStorage.setItem('tipo', String(dados.tipo));
             await AsyncStorage.setItem('id_usuario', String(dados.id_usuario));
+            await AsyncStorage.setItem('precisa_redefinir_senha', precisaRedefinir ? 'true' : 'false');
 
             console.log('[AUTH] Dados salvos no AsyncStorage.');
         } catch (erroStorage) {
             console.log('[AUTH] Erro ao salvar no AsyncStorage:', erroStorage);
         }
 
-        try {
-            const jaTemBiometria = await biometriaAtiva(dados.id_usuario);
+        if (!precisaRedefinir) {
+            try {
+                const jaTemBiometria = await biometriaAtiva(dados.id_usuario);
 
-            if (!jaTemBiometria) {
-                const aceitou = await perguntarAtivarBiometria();
+                if (!jaTemBiometria) {
+                    const aceitou = await perguntarAtivarBiometria();
 
-                if (aceitou) {
-                    const biometriaOk = await getBiometria();
+                    if (aceitou) {
+                        const biometriaOk = await getBiometria();
 
-                    if (biometriaOk) {
-                        await ativarBiometria(dados.id_usuario);
-                        console.log('[AUTH] Biometria ativada para', dados.id_usuario);
-                    } else {
-                        console.log('[AUTH] Biometria não validada.');
+                        if (biometriaOk) {
+                            await ativarBiometria(dados.id_usuario);
+                            console.log('[AUTH] Biometria ativada para', dados.id_usuario);
+                        } else {
+                            console.log('[AUTH] Biometria não validada.');
+                        }
                     }
+                } else {
+                    console.log('[AUTH] Biometria já estava ativa.');
                 }
-            } else {
-                console.log('[AUTH] Biometria já estava ativa.');
+            } catch (erroBiometria) {
+                console.log('[AUTH] Erro no fluxo de biometria:', erroBiometria);
             }
-        } catch (erroBiometria) {
-            console.log('[AUTH] Erro no fluxo de biometria:', erroBiometria);
         }
 
         return {
             sucesso: true,
+            precisaRedefinirSenha: precisaRedefinir,
             usuario: {
                 id: dados.id_usuario,
                 nome: dados.nome,
@@ -133,7 +130,6 @@ export async function login(cpf, senha) {
 
     } catch (erro) {
         console.log('[AUTH] Exceção capturada:', erro);
-        console.log('[AUTH] Mensagem da exceção:', erro?.message);
 
         return {
             sucesso: false,
@@ -148,7 +144,8 @@ export async function logout() {
             'token',
             'nome',
             'tipo',
-            'id_usuario'
+            'id_usuario',
+            'precisa_redefinir_senha'
         ]);
 
         console.log('[AUTH] Token e dados locais removidos.');

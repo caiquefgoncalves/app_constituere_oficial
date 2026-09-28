@@ -8,45 +8,50 @@ import {
     ScrollView,
 } from "react-native";
 
-import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/Header";
 import Botao from "../components/Botao";
+import CardReuniao from "../components/CardReuniao";
 
-export default function Reunioes({ setTela }) {
+export default function Reunioes({ navigation }) {
 
     const [filtro, setFiltro] = useState("proximas");
 
     return (
         <View style={styles.container}>
-            <Header />
 
-            <View style={styles.conteudo}>
-                <ScrollView
+            <Header navigation={navigation} />
+
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.main}
+                showsVerticalScrollIndicator={false}
             >
 
-                <Text style={styles.titulo}>
-
-                </Text>
-
-
-                <View style={styles.cardTopo}>
-
-                    <Text style={styles.tituloSuasReunioes}>
-                        Suas Reuniões
+                {/* CABEÇALHO */}
+                <View>
+                    <Text style={styles.titulo}>
+                        Reuniões
                     </Text>
 
-                    <Botao texto={"Agendar reunião"} />
-
+                    <Text style={styles.subtitulo}>
+                        Acompanhe e gerencie suas reuniões
+                    </Text>
                 </View>
 
 
+                {/* SUAS REUNIÕES */}
+
+                <Botao texto={"Agendar reunião"}/>
+
+
+
+                {/* ABAS */}
                 <View style={styles.abas}>
 
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("proximas")}
                     >
-
                         <Text
                             style={[
                                 styles.textoAba,
@@ -59,7 +64,24 @@ export default function Reunioes({ setTela }) {
                         {filtro === "proximas" && (
                             <View style={styles.linhaAtiva} />
                         )}
+                    </TouchableOpacity>
 
+                    <TouchableOpacity
+                        style={styles.aba}
+                        onPress={() => setFiltro("aConfirmar")}
+                    >
+                        <Text
+                            style={[
+                                styles.textoAba,
+                                filtro === "aConfirmar" && styles.abaAtiva
+                            ]}
+                        >
+                            A Confirmar
+                        </Text>
+
+                        {filtro === "aConfirmar" && (
+                            <View style={styles.linhaAtiva} />
+                        )}
                     </TouchableOpacity>
 
 
@@ -67,7 +89,6 @@ export default function Reunioes({ setTela }) {
                         style={styles.aba}
                         onPress={() => setFiltro("realizadas")}
                     >
-
                         <Text
                             style={[
                                 styles.textoAba,
@@ -80,187 +101,56 @@ export default function Reunioes({ setTela }) {
                         {filtro === "realizadas" && (
                             <View style={styles.linhaAtiva} />
                         )}
-
                     </TouchableOpacity>
 
                 </View>
 
 
-
-
                 {filtro === "proximas" && (
 
-                    <View style={styles.cardReuniao}>
+                    <View style={styles.listaReunioes}>
 
-                        <View style={styles.linhaPrincipal}>
-
-                            <View style={styles.iconeRelogio}>
-
-                                <Ionicons
-                                    name="time-outline"
-                                    size={30}
-                                    color="#0757B9"
-                                />
-
-                            </View>
-
-                            <Text style={styles.nomeReuniao}>
-                                Andamento do Processo
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.informacao}>
-
-                            <Ionicons
-                                name="calendar-outline"
-                                size={21}
-                                color="#0757B9"
-                            />
-
-                            <Text style={styles.textoInformacao}>
-                                03/08/2026 (Segunda-Feira)
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.informacao}>
-
-                            <Ionicons
-                                name="time-outline"
-                                size={21}
-                                color="#0757B9"
-                            />
-
-                            <Text style={styles.textoInformacao}>
-                                14:30
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.informacao}>
-
-                            <Ionicons
-                                name="location-outline"
-                                size={22}
-                                color="#0757B9"
-                            />
-
-                            <Text style={styles.textoInformacao}>
-                                Escritório
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.areaStatus}>
-
-                            <View style={styles.statusConfirmada}>
-
-                                <Text style={styles.textoConfirmada}>
-                                    Confirmada
-                                </Text>
-
-                            </View>
-
-                        </View>
+                        <CardReuniao
+                            titulo={"Andamento do Processo"}
+                            dia={"03/08/2026 (Segunda-feira)"}
+                            horario={"14:30"}
+                            local={"Escritório"}
+                            status={"Confirmada"}
+                        />
 
                     </View>
 
                 )}
 
+                { filtro === "aConfirmar" && (
+                    <CardReuniao
+                        titulo={"Reunião com advogado"}
+                        dia={"03/08/2026 (Segunda-feira)"}
+                        horario={"14:30"}
+                        local={"Escritório"}
+                        status={"A confirmar"}
 
+                    />
+                )}
 
 
                 {filtro === "realizadas" && (
 
-                    <View style={styles.cardReuniao}>
+                    <View style={styles.listaReunioes}>
 
-                        <View style={styles.linhaPrincipal}>
-
-                            <View style={styles.iconeRealizada}>
-
-                                <Ionicons
-                                    name="checkmark-outline"
-                                    size={30}
-                                    color="#59A83B"
-                                />
-
-                            </View>
-
-                            <Text style={styles.nomeReuniao}>
-                                Consulta Inicial
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.informacao}>
-
-                            <Ionicons
-                                name="calendar-outline"
-                                size={21}
-                                color="#0757B9"
-                            />
-
-                            <Text style={styles.textoInformacao}>
-                                03/08/2026 (Segunda-Feira)
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.informacao}>
-
-                            <Ionicons
-                                name="time-outline"
-                                size={21}
-                                color="#0757B9"
-                            />
-
-                            <Text style={styles.textoInformacao}>
-                                14:30
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.informacao}>
-
-                            <Ionicons
-                                name="location-outline"
-                                size={22}
-                                color="#0757B9"
-                            />
-
-                            <Text style={styles.textoInformacao}>
-                                Escritório
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.areaStatus}>
-
-                            <View style={styles.statusRealizada}>
-
-                                <Text style={styles.textoRealizada}>
-                                    Realizada
-                                </Text>
-
-                            </View>
-
-                        </View>
+                        <CardReuniao
+                            titulo={"Consulta Inicial"}
+                            dia={"03/08/2026 (Segunda-feira)"}
+                            horario={"14:30"}
+                            local={"Escritório"}
+                            status={"Realizada"}
+                        />
 
                     </View>
 
                 )}
 
             </ScrollView>
-            </View>
 
         </View>
     );
@@ -271,221 +161,113 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: "#F5F5F5",
     },
 
+    scroll: {
+        flex: 1,
+    },
 
-
-    conteudo: {
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 110,
+    main: {
+        paddingVertical: 20,
+        paddingHorizontal: 30,
+        gap: 20,
+        paddingBottom: 120,
     },
 
 
 
     titulo: {
         fontSize: 25,
-        fontWeight: "800",
-        color: "#2A2929",
-        marginBottom: 15,
+        fontFamily: "Inter_700Bold",
+        color: "#000000",
+    },
+
+    subtitulo: {
+        fontSize: 14,
+        fontFamily: "Inter_400Regular",
+        color: "#666666",
+        marginTop: 3,
     },
 
 
 
     cardTopo: {
+        width: "100%",
         backgroundColor: "#FFFFFF",
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 15,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
+        borderRadius: 10,
 
-        elevation: 5,
+        paddingVertical: 18,
+        paddingHorizontal: 18,
+
+        gap: 16,
+
+        elevation: 3,
 
         shadowColor: "#000000",
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-
+        shadowOpacity: 0.08,
+        shadowRadius: 5,
         shadowOffset: {
             width: 0,
-            height: 3,
+            height: 2,
         },
-
-        marginBottom: 23,
     },
 
+    textosCardTopo: {
+        gap: 4,
+    },
 
     tituloSuasReunioes: {
-        fontSize: 25,
-        fontWeight: "800",
+        fontSize: 20,
+        fontFamily: "Inter_800ExtraBold",
+        color: "#000000",
+    },
+
+    descricaoSuasReunioes: {
+        fontSize: 14,
         fontFamily: "Inter_400Regular",
-        color: "#222222",
+        color: "#666666",
     },
 
 
-
-
-    textoAgendar: {
-        color: "#FFFFFF",
-        fontSize: 12,
-        fontWeight: "800",
-    },
-
-
-    /* ABAS */
 
     abas: {
+        width: "100%",
         flexDirection: "row",
         borderBottomWidth: 1,
-        borderBottomColor: "#CCCCCC",
-        marginBottom: 23,
+        borderBottomColor: "#E2E2E2",
     },
-
 
     aba: {
         flex: 1,
         alignItems: "center",
         paddingBottom: 10,
+        position: "relative",
     },
-
 
     textoAba: {
-        fontSize: 18,
+        fontSize: 15,
         fontFamily: "Inter_700Bold",
-        color: "#AAAAAA",
+        color: "#999999",
     },
-
 
     abaAtiva: {
-        color: "#0757B9",
+        color: "#0047AB",
     },
-
 
     linhaAtiva: {
         position: "absolute",
         bottom: -1,
-        width: "75%",
+        width: "70%",
         height: 3,
-        backgroundColor: "#0757B9",
+        backgroundColor: "#0047AB",
         borderRadius: 3,
     },
 
 
-    /* CARD DA REUNIÃO */
 
-    cardReuniao: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 8,
-        padding: 18,
-
-        elevation: 5,
-
-        shadowColor: "#000000",
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-
-        shadowOffset: {
-            width: 0,
-            height: 3,
-        },
-
-        marginBottom: 20,
-    },
-
-
-
-    linhaPrincipal: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 20,
-    },
-
-
-    iconeRelogio: {
-        width: 40,
-        height: 40,
-        borderRadius: 6,
-        backgroundColor: "#E5F0FF",
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: 12,
-    },
-
-
-    iconeRealizada: {
-        width: 40,
-        height: 40,
-        borderRadius: 6,
-        backgroundColor: "#E9F8E4",
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: 12,
-    },
-
-
-    nomeReuniao: {
-        fontSize: 20,
-        color: "#222222",
-        fontFamily: "Inter_700Bold",
-    },
-
-
-
-    informacao: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 13,
-    },
-
-
-    textoInformacao: {
-        fontSize: 15,
-        color: "#666666",
-        marginLeft: 10,
-        fontFamily: "Inter_400Regular",
-    },
-
-
-
-    areaStatus: {
-        marginTop: 4,
-        alignItems: "flex-start",
-    },
-
-
-    statusConfirmada: {
-        backgroundColor: "#D4E7FF",
-        borderWidth: 1,
-        borderColor: "#0757B9",
-        borderRadius: 5,
-        paddingVertical: 5,
-        paddingHorizontal: 12,
-    },
-
-
-    textoConfirmada: {
-        color: "#0757B9",
-        fontSize: 15,
-        fontFamily: "Inter_700Bold",
-    },
-
-
-    statusRealizada: {
-        backgroundColor: "#E1F5D9",
-        borderWidth: 1,
-        borderColor: "#59A83B",
-        borderRadius: 5,
-        paddingVertical: 5,
-        paddingHorizontal: 12,
-    },
-
-
-    textoRealizada: {
-        color: "#59A83B",
-        fontSize: 15,
-        fontFamily: "Inter_700Bold",
+    listaReunioes: {
+        width: "100%",
+        gap: 12,
     },
 
 });

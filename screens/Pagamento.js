@@ -11,152 +11,88 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/Header";
 import Botao from "../components/Botao";
+import CardValores from "../components/CardValores";
+import CardPagamento from "../components/CardPagamento";
 
-export default function PagamentoAberto({ setTela }) {
+export default function PagamentoAberto({ navigation }) {
 
     const [filtro, setFiltro] = useState("aberto");
 
     return (
         <View style={styles.container}>
 
-            <Header/>
-
-            <View style={styles.conteudo}>
+            <Header navigation={navigation} />
 
             <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.main}
+                showsVerticalScrollIndicator={false}
             >
 
-                <Text style={styles.titulo}>
-
-                </Text>
-
-
-                {/* RESUMO FINANCEIRO */}
-                <View style={styles.resumo}>
-
-                    <Text style={styles.tituloResumo}>
-                        Resumo Financeiro
+                <View>
+                    <Text style={styles.titulo}>
+                        Pagamentos
                     </Text>
 
-                    <View style={styles.linhaResumo}>
-
-                        {/* EM ABERTO */}
-                        <View style={styles.coluna}>
-
-                            <Text style={[styles.nomeResumo, styles.vermelho]}>
-                                Em Aberto
-                            </Text>
-
-                            <Text style={[styles.valorResumo, styles.vermelho]}>
-                                R$ 1.000,00
-                            </Text>
-
-                            <Text style={styles.pequeno}>
-                                1 Cobrança
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.divisoria} />
-
-
-                        {/* A VENCER */}
-                        <View style={styles.coluna}>
-
-                            <Text style={[styles.nomeResumo, styles.amarelo]}>
-                                A Vencer
-                            </Text>
-
-                            <Text style={[styles.valorResumo, styles.amarelo]}>
-                                R$ 1.000,00
-                            </Text>
-
-                            <Text style={styles.pequeno}>
-                                1 Cobrança
-                            </Text>
-
-                        </View>
-
-
-                        <View style={styles.divisoria} />
-
-
-                        {/* PAGOS */}
-                        <View style={styles.coluna}>
-
-                            <Text style={[styles.nomeResumo, styles.verde]}>
-                                Pagos
-                            </Text>
-
-                            <Text style={[styles.valorResumo, styles.verde]}>
-                                R$ 1.000,00
-                            </Text>
-
-                            <Text style={styles.pequeno}>
-                                1 Pago
-                            </Text>
-
-                        </View>
-
-                    </View>
-
+                    <Text style={styles.subtitulo}>
+                        Acompanhe seus pagamentos e cobranças
+                    </Text>
                 </View>
 
 
-                {/* ABAS */}
+                <ScrollView horizontal={true} contentContainerStyle={styles.resumo}>
+                    <CardValores valor={"700,00"} titulo={"Vencido"} />
+                    <CardValores valor={"1.000,00"} titulo={"Em aberto"} />
+                    <CardValores valor={"200,00"} titulo={"Pago"} />
+
+
+                </ScrollView>
+
+
                 <View style={styles.abas}>
 
-                    {/* EM ABERTO */}
+                    <TouchableOpacity
+                        style={styles.aba}
+                        onPress={() => setFiltro("vencido")}
+                    >
+                        <Text
+                            style={[
+                                styles.textoAba,
+                                filtro === "vencido" && styles.abaAtiva
+                            ]}
+                        >
+                            Vencido
+                        </Text>
+
+                        {filtro === "vencido" && (
+                            <View style={styles.linhaAtiva} />
+                        )}
+                    </TouchableOpacity>
+
+
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("aberto")}
                     >
-
                         <Text
                             style={[
                                 styles.textoAba,
                                 filtro === "aberto" && styles.abaAtiva
                             ]}
                         >
-                            Em Aberto
+                            A Vencer
                         </Text>
 
                         {filtro === "aberto" && (
                             <View style={styles.linhaAtiva} />
                         )}
-
                     </TouchableOpacity>
 
 
-                    {/* A VENCER */}
-                    <TouchableOpacity
-                        style={styles.aba}
-                        onPress={() => setFiltro("vencer")}
-                    >
-
-                        <Text
-                            style={[
-                                styles.textoAba,
-                                filtro === "vencer" && styles.abaAtiva
-                            ]}
-                        >
-                            A Vencer
-                        </Text>
-
-                        {filtro === "vencer" && (
-                            <View style={styles.linhaAtiva} />
-                        )}
-
-                    </TouchableOpacity>
-
-
-                    {/* PAGOS */}
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("pagos")}
                     >
-
                         <Text
                             style={[
                                 styles.textoAba,
@@ -169,247 +105,30 @@ export default function PagamentoAberto({ setTela }) {
                         {filtro === "pagos" && (
                             <View style={styles.linhaAtiva} />
                         )}
-
                     </TouchableOpacity>
 
                 </View>
 
 
-                {/* ================================================== */}
-                {/* EM ABERTO */}
-                {/* ================================================== */}
-
-                {filtro === "aberto" && (
-
-                    <View style={styles.cardPagamento}>
-
-                        <View style={styles.topoCard}>
-
-                            <View style={styles.iconeDocumentoVermelho}>
-                                <Ionicons
-                                    name="document-outline"
-                                    size={30}
-                                    color="#FF4D55"
-                                />
-                            </View>
-
-                            <View>
-                                <Text style={styles.honorario}>
-                                    Honorário
-                                </Text>
-
-                                <Text style={styles.processo}>
-                                    Processo Nº 0000001
-                                </Text>
-                            </View>
-
-                        </View>
-
-
-                        <View style={styles.informacoes}>
-
-                            {/* VENCIMENTO */}
-                            <View style={styles.blocoInformacao}>
-
-                                <View style={styles.infoTitulo}>
-
-                                    <Ionicons
-                                        name="calendar-outline"
-                                        size={19}
-                                        color="#0757B9"
-                                    />
-
-                                    <Text style={styles.infoTexto}>
-                                        Vencimento
-                                    </Text>
-
-                                </View>
-
-                                <Text style={styles.infoValor}>
-                                    02/08/2026
-                                </Text>
-
-                            </View>
-
-
-                            {/* VALOR */}
-                            <View style={styles.blocoInformacao}>
-
-                                <Text style={styles.infoTexto}>
-                                    Valor
-                                </Text>
-
-                                <Text style={styles.valorVermelho}>
-                                    R$ 1.000,00
-                                </Text>
-
-                            </View>
-
-                        </View>
-
-
-                        <Botao texto={"Pagar agora"} />
-
-                    </View>
-
+                {filtro === "vencido" && (
+                    <CardPagamento titulo={"Honorário"} valor={"800,00"} status={"vencido"} data={"01/09/2026"}/>
                 )}
 
 
-                {/* ================================================== */}
                 {/* A VENCER */}
-                {/* ================================================== */}
-
-                {filtro === "vencer" && (
-
-                    <View style={styles.cardPagamento}>
-
-                        <View style={styles.topoCard}>
-
-                            <View style={styles.iconeDocumentoAmarelo}>
-                                <Ionicons
-                                    name="document-outline"
-                                    size={30}
-                                    color="#E6B000"
-                                />
-                            </View>
-
-                            <View>
-                                <Text style={styles.honorario}>
-                                    Honorário
-                                </Text>
-
-                                <Text style={styles.processo}>
-                                    Processo Nº 0000001
-                                </Text>
-                            </View>
-
-                        </View>
-
-
-                        <View style={styles.informacoes}>
-
-                            {/* VENCIMENTO */}
-                            <View style={styles.blocoInformacao}>
-
-                                <View style={styles.infoTitulo}>
-
-                                    <Ionicons
-                                        name="calendar-outline"
-                                        size={19}
-                                        color="#0757B9"
-                                    />
-
-                                    <Text style={styles.infoTexto}>
-                                        Vencimento
-                                    </Text>
-
-                                </View>
-
-                                <Text style={styles.infoValor}>
-                                    02/08/2026
-                                </Text>
-
-                            </View>
-
-
-                            {/* VALOR */}
-                            <View style={styles.blocoInformacao}>
-
-                                <Text style={styles.infoTexto}>
-                                    Valor
-                                </Text>
-
-                                <Text style={styles.valorAmarelo}>
-                                    R$ 1.000,00
-                                </Text>
-
-                            </View>
-
-                        </View>
-
-
-                        <TouchableOpacity style={styles.botaoPagar}>
-
-                            <Text style={styles.textoBotao}>
-                                Pagar Agora
-                            </Text>
-
-                        </TouchableOpacity>
-
-                    </View>
+                {filtro === "aberto" && (
+                    <CardPagamento titulo={"Pró-labore"} valor={"300,00"} status={"aberto"} data={"01/10/2026"}/>
 
                 )}
 
 
-                {/* ================================================== */}
                 {/* PAGOS */}
-                {/* ================================================== */}
-
                 {filtro === "pagos" && (
-
-                    <View style={styles.cardPagamento}>
-
-                        <View style={styles.topoCard}>
-
-                            <View style={styles.iconeDocumentoVerde}>
-                                <Ionicons
-                                    name="document-outline"
-                                    size={30}
-                                    color="#59A83B"
-                                />
-                            </View>
-
-                            <View>
-                                <Text style={styles.honorario}>
-                                    Honorário
-                                </Text>
-
-                                <Text style={styles.processo}>
-                                    Processo Nº 0000001
-                                </Text>
-                            </View>
-
-                        </View>
-
-
-                        <View style={styles.informacoes}>
-
-                            {/* FORMA DE PAGAMENTO */}
-                            <View style={styles.blocoInformacao}>
-
-                                <Text style={styles.infoTexto}>
-                                    Forma de pagamento
-                                </Text>
-
-                                <Text style={styles.infoValor}>
-                                    Pix
-                                </Text>
-
-                            </View>
-
-
-                            {/* VALOR */}
-                            <View style={styles.blocoInformacao}>
-
-                                <Text style={styles.infoTexto}>
-                                    Valor
-                                </Text>
-
-                                <Text style={styles.valorVerde}>
-                                    R$ 1.000,00
-                                </Text>
-
-                            </View>
-
-                        </View>
-
-                    </View>
+                    <CardPagamento titulo={"Entrada"} valor={"1.000,00"} status={"pago"} data={"01/07/2026"}/>
 
                 )}
 
             </ScrollView>
-            </View>
-
 
         </View>
     );
@@ -420,56 +139,42 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: "#F5F5F5",
+    },
+
+    scroll: {
+        flex: 1,
+        width: '100%',
+    },
+
+    main: {
+        paddingVertical: 20,
+        paddingHorizontal: 30,
+        gap: 20,
+        paddingBottom: 120,
     },
 
 
-    conteudo: {
-        paddingHorizontal: 24,
-        paddingTop: 0,
-        paddingBottom: 110,
-    },
-
-
-    /* TÍTULO */
 
     titulo: {
         fontSize: 25,
-        fontWeight: "800",
-        color: "#2A2929",
-        marginBottom: 18,
+        fontFamily: "Inter_700Bold",
+        color: "#000000",
+    },
+
+    subtitulo: {
+        fontSize: 14,
+        fontFamily: "Inter_400Regular",
+        color: "#666666",
+        marginTop: 3,
     },
 
 
     /* RESUMO */
 
     resumo: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 10,
-        padding: 18,
-        elevation: 5,
-        shadowColor: "#000000",
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        shadowOffset: {
-            width: 0,
-            height: 3,
-        },
-        marginBottom: 28,
-    },
-
-
-    tituloResumo: {
-        fontSize: 25,
-        fontFamily: "Inter_700Bold",
-        color: "#000000",
-        marginBottom: 20,
-    },
-
-
-    linhaResumo: {
         flexDirection: "row",
         alignItems: "center",
+        gap: 10
     },
 
 
@@ -478,87 +183,38 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
 
-
-    divisoria: {
-        width: 1,
-        height: 65,
-        backgroundColor: "#B5CFFF",
-    },
-
-
-    nomeResumo: {
-        fontSize: 18,
-        fontWeight: "800",
-        marginBottom: 9,
-        textAlign: "center",
-    },
-
-
-    valorResumo: {
-        fontSize: 20,
-        fontWeight: "800",
-        marginBottom: 13,
-        textAlign: "center",
-    },
-
-
-    pequeno: {
-        fontSize: 14,
-        color: "#666666",
-        fontFamily: "Inter_500Regular",
-    },
-
-
-    vermelho: {
-        color: "#FF4D55",
-    },
-
-
-    amarelo: {
-        color: "#E6B000",
-    },
-
-
-    verde: {
-        color: "#59A83B",
-    },
-
-
     /* ABAS */
 
     abas: {
+        width: "100%",
         flexDirection: "row",
         borderBottomWidth: 1,
-        borderBottomColor: "#CCCCCC",
-        marginBottom: 18,
+        borderBottomColor: "#E2E2E2",
     },
-
 
     aba: {
         flex: 1,
         alignItems: "center",
         paddingBottom: 10,
+        position: "relative",
     },
 
-
     textoAba: {
-        fontSize: 18,
+        fontSize: 15,
         fontFamily: "Inter_700Bold",
         color: "#999999",
     },
 
-
     abaAtiva: {
-        color: "#0757B9",
+        color: "#0047AB",
     },
-
 
     linhaAtiva: {
         position: "absolute",
         bottom: -1,
-        width: "75%",
+        width: "70%",
         height: 3,
-        backgroundColor: "#0757B9",
+        backgroundColor: "#0047AB",
         borderRadius: 3,
     },
 
@@ -566,60 +222,62 @@ const styles = StyleSheet.create({
     /* CARD */
 
     cardPagamento: {
+        width: "100%",
         backgroundColor: "#FFFFFF",
-        borderRadius: 8,
+        borderRadius: 10,
         padding: 18,
-        elevation: 5,
+
+        elevation: 3,
+
         shadowColor: "#000000",
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
+        shadowOpacity: 0.08,
+        shadowRadius: 5,
         shadowOffset: {
             width: 0,
-            height: 3,
+            height: 2,
         },
-        marginBottom: 25,
-    },
 
+        gap: 20,
+    },
 
     topoCard: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 24,
     },
 
+    infoProcesso: {
+        flex: 1,
+    },
 
     iconeDocumentoVermelho: {
-        width: 40,
-        height: 40,
-        borderRadius: 6,
+        width: 42,
+        height: 42,
+        borderRadius: 8,
         backgroundColor: "#FFE9EA",
         alignItems: "center",
         justifyContent: "center",
         marginRight: 12,
     },
 
-
     iconeDocumentoAmarelo: {
-        width: 40,
-        height: 40,
-        borderRadius: 6,
+        width: 42,
+        height: 42,
+        borderRadius: 8,
         backgroundColor: "#FFF6D9",
         alignItems: "center",
         justifyContent: "center",
         marginRight: 12,
     },
 
-
     iconeDocumentoVerde: {
-        width: 40,
-        height: 40,
-        borderRadius: 6,
+        width: 42,
+        height: 42,
+        borderRadius: 8,
         backgroundColor: "#E9F8E4",
         alignItems: "center",
         justifyContent: "center",
         marginRight: 12,
     },
-
 
     honorario: {
         fontSize: 18,
@@ -627,85 +285,61 @@ const styles = StyleSheet.create({
         color: "#222222",
     },
 
-
     processo: {
-        fontSize: 14,
+        fontSize: 13,
         color: "#999999",
-        marginTop: 4,
+        marginTop: 3,
         fontFamily: "Inter_400Regular_Italic",
     },
 
 
+    /* INFORMAÇÕES */
+
     informacoes: {
         flexDirection: "row",
         justifyContent: "space-between",
-        paddingHorizontal: 8,
-        marginBottom: 18,
+        gap: 20,
     },
-
 
     blocoInformacao: {
-        minWidth: 120,
+        flex: 1,
     },
-
 
     infoTitulo: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10
+        gap: 7,
     },
 
-
     infoTexto: {
-        fontSize: 16,
-        color: "#999999",
+        fontSize: 14,
+        color: "#777777",
+        fontFamily: "Inter_400Regular",
         marginBottom: 5,
     },
 
-
     infoValor: {
-        fontSize: 16,
+        fontSize: 15,
         color: "#333333",
         fontFamily: "Inter_700Bold",
     },
 
-
     valorVermelho: {
         color: "#FF4D55",
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: "Inter_700Bold",
     },
-
 
     valorAmarelo: {
         color: "#E6B000",
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: "Inter_700Bold",
     },
-
 
     valorVerde: {
         color: "#59A83B",
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: "Inter_700Bold",
-    },
-
-
-    /* BOTÃO */
-
-    botaoPagar: {
-        backgroundColor: "#0757B9",
-        borderRadius: 6,
-        paddingVertical: 10,
-        paddingHorizontal: 22,
-        alignSelf: "flex-end",
-    },
-
-
-    textoBotao: {
-        color: "#FFFFFF",
-        fontSize: 13,
-        fontWeight: "800",
     },
 
 });

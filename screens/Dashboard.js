@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Header from "../components/Header";
 import CardDashboard from "../components/CardDashboard";
-import { logout } from "../services/realizarLogin";
+import CardReuniao from "../components/CardReuniao";
+import CardPagamento from "../components/CardPagamento";
 
 function formatarNome(nomeCompleto) {
     if (!nomeCompleto) return "";
@@ -47,76 +48,50 @@ export default function Dashboard({ navigation }) {
         };
     }, []);
 
-    async function sair() {
-        Alert.alert(
-            'Sair da conta',
-            'Tem certeza que deseja sair?',
-            [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Sair',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await logout();
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'Home' }]
-                        });
-                    }
-                }
-            ]
-        );
-    }
-
     return (
         <View style={styles.container}>
             <Header navigation={navigation} />
-            <View style={styles.main}>
-                <View style={styles.saudacao}>
-                    <Text style={styles.ola}>Olá, </Text>
-                    <Text style={styles.nome}>
-                        {nome || "Cliente"}
+            <ScrollView contentContainerStyle={styles.main}>
+                <View>
+                    <View style={styles.saudacao}>
+                        <Text style={styles.ola}>Olá, </Text>
+                        <Text style={styles.nome}>{nome || "Cliente"}</Text>
+                    </View>
+                    <Text style={styles.subtitulo}>
+                        Tenha uma visão geral dos seus processos e reuniões
                     </Text>
+                </View>
+                <View style={styles.cards}>
+                    <CardDashboard
+                        texto={"Processos Ativos"}
+                        numero={"3"}
+                        icone={require("../assets/iconeProcessoAtivo.png")}
+                    />
+                    <CardDashboard
+                        texto={"Próximas Reuniões"}
+                        numero={"1"}
+                        icone={require("../assets/iconeReunioesAtivo.png")}
+                    />
                 </View>
                 <View style={styles.resumo}>
-                    <Text style={styles.titulo}>Resumo</Text>
-                    <View style={styles.cards}>
-                        <CardDashboard
-                            texto={"Processos Ativos"}
-                            numero={"0"}
-                            icone={require("../assets/processosAtivos.png")}
-                        />
-                        <CardDashboard
-                            texto={"Próximas Reuniões"}
-                            numero={"0"}
-                            icone={require("../assets/proximasReunioes.png")}
-                        />
-                        <CardDashboard
-                            texto={"Processos"}
-                            numero={"0"}
-                            icone={require("../assets/processos.png")}
-                        />
-                        <CardDashboard
-                            texto={"Avisos"}
-                            numero={"0"}
-                            icone={require("../assets/notificacoesAmarelo.png")}
-                        />
-                    </View>
+                    <Text style={styles.titulo}>O que você precisa saber</Text>
+                    <CardReuniao
+                        titulo={"Andamento do Processo"}
+                        dia={"03/08/2026 (Segunda-feira)"}
+                        horario={"14:30"}
+                        local={"Escritório"}
+                        status={"A confirmar"}
+                        dashboard={"Próxima Reunião"}
+                    />
+                    <CardPagamento
+                        titulo={"Pagamento do Processo"}
+                        dashboard={"Pagamento Pendente"}
+                        status={"aberto"}
+                        valor={"R$ 1.000,00"}
+                        data={"02/10/2026"}
+                    />
                 </View>
-
-                <TouchableOpacity
-                    style={styles.botaoSair}
-                    onPress={sair}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.textoBotaoSair}>
-                        Sair da conta
-                    </Text>
-                </TouchableOpacity>
-            </View>
+            </ScrollView>
         </View>
     );
 }
@@ -126,11 +101,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     main: {
-        paddingVertical: 50,
+        paddingVertical: 20,
         paddingHorizontal: 30,
         alignItems: "flex-start",
         justifyContent: "flex-start",
-        gap: 30,
+        gap: 20,
     },
     saudacao: {
         flexDirection: "row",
@@ -138,22 +113,13 @@ const styles = StyleSheet.create({
 
     ola: {
         fontSize: 25,
-        fontFamily: "Inter_700Bold",
+        fontFamily: "Inter_700Bold"
     },
 
     nome: {
         fontSize: 25,
         fontFamily: "Inter_700Bold",
-        color: "#0047AB",
-    },
-    resumo: {
-        width: "100%",
-        backgroundColor: "#FFFFFF",
-        borderRadius: 12,
-        padding: 16,
-        boxShadow: "5px 10px 2px 0px rgba(0, 0, 0, 0.08)",
-        flexDirection: "column",
-        gap: 16,
+        color: "#0047AB"
     },
     titulo: {
         fontSize: 20,
@@ -165,18 +131,15 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         flexWrap: "wrap",
     },
-    botaoSair: {
-        marginTop: 10,
-        alignSelf: "stretch",
-        backgroundColor: "#d9534f",
-        paddingVertical: 14,
-        borderRadius: 10,
-        alignItems: "center",
-        justifyContent: "center",
+
+    resumo: {
+        width: "100%",
+        gap: 10
     },
-    textoBotaoSair: {
-        color: "#FFFFFF",
-        fontFamily: "Inter_700Bold",
-        fontSize: 16,
-    },
-});
+    subtitulo: {
+        fontSize: 14,
+        fontFamily: "Inter_400Regular",
+        color: "#666666",
+        marginTop: 3,
+    }
+})
