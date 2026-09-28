@@ -1,4 +1,4 @@
-const API_URL = 'http://10.92.11.22:5000';
+const API_URL = 'http://192.168.0.129:5000';
 
 export async function requisicao(caminho, opcoes = {}) {
     const url = `${API_URL}${caminho}`;

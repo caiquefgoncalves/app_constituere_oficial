@@ -1,13 +1,35 @@
-import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
+import { logout } from "../services/realizarLogin";
 
 export default function Header({ navigation }) {
 
     const lidarComSair = () => {
-        if (navigation) {
-            navigation.replace("Login");
-        }
+        Alert.alert(
+            'Sair da conta',
+            'Tem certeza que deseja sair?',
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Sair',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await logout();
+
+                        if (navigation) {
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }]
+                            });
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -21,7 +43,10 @@ export default function Header({ navigation }) {
 
                 <View style={styles.acoesDireita}>
 
-                    <TouchableOpacity style={styles.botaoNotificacao} onPress={() => navigation.navigate("Notificacoes")}>
+                    <TouchableOpacity
+                        style={styles.botaoNotificacao}
+                        onPress={() => navigation.navigate("Notificacoes")}
+                    >
                         <Ionicons
                             name="notifications-outline"
                             size={35}

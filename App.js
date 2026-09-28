@@ -1,7 +1,6 @@
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {NavigationContainer} from "@react-navigation/native";
-import Home from "./screens/Home";
 import Dashboard from "./screens/Dashboard";
 import Login from "./screens/Login";
 import Pagamento from "./screens/Pagamento";
@@ -18,6 +17,7 @@ import iconeProcessoInativo from "./assets/iconeProcessoInativo.png";
 import iconeReunioesAtivo from "./assets/iconeReunioesAtivo.png";
 import iconeReunioesInativo from "./assets/iconeReunioesInativo.png";
 import {Image, View} from "react-native";
+import Home from "./screens/Home";
 import Reunioes from "./screens/Reunioes";
 import RedefinirSenha from "./screens/RedefinirSenha";
 import AgendarReuniao from "./screens/AgendarReuniao";

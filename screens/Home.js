@@ -36,7 +36,7 @@ function perguntarAtivarBiometria() {
     });
 }
 
-export function Home({navigation}) {
+export default function Home({navigation}) {
 
     const [logado, setLogado] = useState(false);
     const [idUsuario, setIdUsuario] = useState(null);
