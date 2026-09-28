@@ -1,0 +1,180 @@
+import React, { useEffect, useState } from 'react';
+import { Image, ImageBackground, StyleSheet, Text, View, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Botao from "../components/Botao";
+import { getBiometria } from '../services/getBiometria';
+import { biometriaAtiva, ativarBiometria } from '../services/biometriaStorage';
+
+function perguntarAtivarBiometria() {
+    return new Promise((resolve) => {
+        Alert.alert(
+            'Ativar biometria?',
+            'Deseja usar sua biometria para entrar mais rápido nas próximas vezes?',
+            [
+                {
+                    text: 'Agora não',
+                    style: 'cancel',
+                    onPress: () => resolve(false)
+                },
+                {
+                    text: 'Ativar',
+                    onPress: () => resolve(true)
+                }
+            ],
+            { cancelable: false }
+        );
+    });
+}
+
+export default function Home({ navigation }) {
+
+    const [verificando, setVerificando] = useState(true);
+    const [logado, setLogado] = useState(false);
+    const [idUsuario, setIdUsuario] = useState(null);
+
+    useEffect(() => {
+        let ativo = true;
+
+        async function verificarLogin() {
+            try {
+                const token = await AsyncStorage.getItem('token');
+                const idSalvo = await AsyncStorage.getItem('id_usuario');
+
+                if (!ativo) return;
+
+                if (token && idSalvo) {
+                    setLogado(true);
+                    setIdUsuario(Number(idSalvo));
+                }
+            } catch (erro) {
+                console.log('[HOME] Erro ao verificar login:', erro);
+            } finally {
+                if (ativo) setVerificando(false);
+            }
+        }
+
+        verificarLogin();
+
+        return () => {
+            ativo = false;
+        };
+    }, []);
+
+    async function acessarPlataforma() {
+        if (!logado) {
+            navigation.navigate("Login");
+            return;
+        }
+
+        try {
+            const temBiometriaAtiva = await biometriaAtiva(idUsuario);
+
+            if (!temBiometriaAtiva) {
+                const aceitou = await perguntarAtivarBiometria();
+
+                if (aceitou) {
+                    const biometriaOk = await getBiometria();
+
+                    if (biometriaOk) {
+                        await ativarBiometria(idUsuario);
+                        console.log('[HOME] Biometria ativada para', idUsuario);
+                    } else {
+                        Alert.alert(
+                            'Biometria não reconhecida',
+                            'Não foi possível ativar a biometria. Você pode tentar novamente depois.'
+                        );
+                    }
+                }
+
+                navigation.navigate("Dashboard");
+                return;
+            }
+
+            const biometriaOk = await getBiometria();
+
+            if (biometriaOk) {
+                navigation.navigate("Dashboard");
+            } else {
+                Alert.alert(
+                    'Biometria não reconhecida',
+                    'Não foi possível confirmar sua identidade. Tente novamente.'
+                );
+            }
+        } catch (erro) {
+            console.log('[HOME] Erro ao validar biometria:', erro);
+            Alert.alert('Erro', 'Não foi possível validar sua biometria.');
+        }
+    }
+
+    return (
+        <ImageBackground source={require("../assets/telaInicial.png")} resizeMode="cover" style={styles.background}>
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Image style={styles.logo} source={require("../assets/logoMenor.png")} />
+                </View>
+                <LinearGradient
+                    colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.5)', '#000000']}
+                    style={styles.transicaoGradiente}
+                />
+                <View style={styles.main}>
+                    <Text style={styles.texto}>Vivendo o direito de um novo jeito</Text>
+                    <View style={styles.botao}>
+                        <Botao
+                            texto={"Acesse a plataforma"}
+                            acao={acessarPlataforma}
+                        />
+                    </View>
+                </View>
+            </View>
+        </ImageBackground>
+    );
+}
+
+const styles = StyleSheet.create({
+    background: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+    },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    header: {
+        width: '100%',
+        flex: 5,
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+        paddingHorizontal: 40,
+        paddingVertical: 60,
+    },
+    main: {
+        flex: 3,
+        width: '100%',
+        backgroundColor: "black",
+        height: "100%",
+        paddingHorizontal: 40,
+        paddingBottom: 100,
+        justifyContent: "space-between",
+    },
+    texto: {
+        color: "white",
+        fontWeight: "bold",
+        fontSize: 45,
+        fontFamily: "Inter_900Black",
+        maxWidth: "90%"
+    },
+    logo: {
+        width: 90,
+        height: 75,
+    },
+    botao: {
+        alignItems: "flex-end",
+    },
+    transicaoGradiente: {
+        width: '100%',
+        height: 200,
+    },
+});
