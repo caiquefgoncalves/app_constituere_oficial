@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
     View,
     Text,
@@ -8,14 +7,24 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    Alert
+    Alert,
+    ActivityIndicator
 } from "react-native";
+
+import * as Clipboard from "expo-clipboard";
+import QRCode from "react-qr-code";
 
 import { Ionicons } from "@expo/vector-icons";
 
 import Header from "../components/Header";
 import Input from "../components/Input";
 import Botao from "../components/Botao";
+import Carregando from "../components/Carregando";
+
+import {
+    criarCobrancaPix,
+    consultarCobrancaPix
+} from "../services/clienteServices";
 
 function formatarDinheiro(valor) {
     return Number(valor || 0).toLocaleString("pt-BR", {
@@ -34,19 +43,92 @@ export default function RealizarPagamento({ navigation, route }) {
     const [validade, setValidade] = useState("");
     const [cvv, setCvv] = useState("");
 
+    const [gerandoPix, setGerandoPix] = useState(false);
+    const [pixGerado, setPixGerado] = useState(null);
+    const [pago, setPago] = useState(false);
+
+    const intervalRef = useRef(null);
+
     const fatura = {
         id: pagamento?.id,
         vencimento: pagamento?.vencimento || "--",
         nome: pagamento?.nome || "Pagamento",
-        valor: formatarDinheiro(pagamento?.valor || 0)
+        valor: formatarDinheiro(pagamento?.valor || 0),
+        valorNumerico: Number(pagamento?.valor || 0),
+        tipo: pagamento?.tipo || "prolabore"
     };
 
-    function pagar() {
-        console.log("Pagamento realizado", {
-            fatura,
-            formaPagamento
-        });
+    const pararConsulta = useCallback(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    }, []);
 
+    useEffect(() => {
+        return () => {
+            pararConsulta();
+        };
+    }, [pararConsulta]);
+
+    async function gerarPix() {
+        if (!pagamento?.id) {
+            Alert.alert("Erro", "Pagamento não identificado.");
+            return;
+        }
+
+        setGerandoPix(true);
+
+        const resultado = await criarCobrancaPix(pagamento.id, fatura.tipo);
+
+        setGerandoPix(false);
+
+        if (!resultado.sucesso) {
+            Alert.alert("Erro", resultado.mensagem);
+            return;
+        }
+
+        setPixGerado(resultado);
+        setPago(false);
+
+        iniciarConsulta(resultado.id_cobranca);
+    }
+
+    function iniciarConsulta(idCobranca) {
+        pararConsulta();
+
+        intervalRef.current = setInterval(async () => {
+            const resultado = await consultarCobrancaPix(
+                idCobranca,
+                pagamento.id,
+                fatura.tipo
+            );
+
+            if (resultado.sucesso && resultado.pago) {
+                pararConsulta();
+                setPago(true);
+
+                Alert.alert(
+                    "Pagamento confirmado",
+                    "Seu pagamento foi recebido com sucesso!",
+                    [{ text: "OK", onPress: () => navigation.goBack() }]
+                );
+            }
+        }, 5000);
+    }
+
+    async function copiarCodigoPix() {
+        if (!pixGerado?.codigo_pagamento) return;
+
+        try {
+            await Clipboard.setStringAsync(pixGerado.codigo_pagamento);
+            Alert.alert("Pix", "Código Pix copiado para a área de transferência.");
+        } catch (e) {
+            Alert.alert("Pix", "Não foi possível copiar. Anote o código manualmente.");
+        }
+    }
+
+    function pagar() {
         Alert.alert(
             "Pagamento registrado",
             "O comprovante será enviado pelo escritório.",
@@ -62,8 +144,16 @@ export default function RealizarPagamento({ navigation, route }) {
         );
     }
 
-    function copiarChavePix() {
-        Alert.alert("Pix", "Chave Pix copiada para a área de transferência.");
+    function selecionarForma(forma) {
+        if (pixGerado && forma !== "pix") {
+            Alert.alert(
+                "Atenção",
+                "Você já gerou uma cobrança Pix. Conclua ou aguarde o pagamento antes de trocar a forma."
+            );
+            return;
+        }
+
+        setFormaPagamento(forma);
     }
 
     return (
@@ -122,7 +212,7 @@ export default function RealizarPagamento({ navigation, route }) {
                                     styles.forma,
                                     formaPagamento === "pix" && styles.formaSelecionada
                                 ]}
-                                onPress={() => setFormaPagamento("pix")}
+                                onPress={() => selecionarForma("pix")}
                             >
                                 <View
                                     style={[
@@ -153,7 +243,7 @@ export default function RealizarPagamento({ navigation, route }) {
                                     styles.forma,
                                     formaPagamento === "boleto" && styles.formaSelecionada
                                 ]}
-                                onPress={() => setFormaPagamento("boleto")}
+                                onPress={() => selecionarForma("boleto")}
                             >
                                 <View
                                     style={[
@@ -184,7 +274,7 @@ export default function RealizarPagamento({ navigation, route }) {
                                     styles.forma,
                                     formaPagamento === "debito" && styles.formaSelecionada
                                 ]}
-                                onPress={() => setFormaPagamento("debito")}
+                                onPress={() => selecionarForma("debito")}
                             >
                                 <View
                                     style={[
@@ -215,7 +305,7 @@ export default function RealizarPagamento({ navigation, route }) {
                                     styles.forma,
                                     formaPagamento === "credito" && styles.formaSelecionada
                                 ]}
-                                onPress={() => setFormaPagamento("credito")}
+                                onPress={() => selecionarForma("credito")}
                             >
                                 <View
                                     style={[
@@ -248,36 +338,102 @@ export default function RealizarPagamento({ navigation, route }) {
                             <Text style={styles.tituloSecao}>Pagamento via Pix</Text>
 
                             <View style={styles.cardPagamento}>
-                                <View style={styles.areaQrCode}>
-                                    <Ionicons
-                                        name="qr-code-outline"
-                                        size={200}
-                                        color="#222222"
-                                    />
-                                </View>
+                                {!pixGerado && (
+                                    <>
+                                        <View style={styles.areaQrCode}>
+                                            <Ionicons
+                                                name="qr-code-outline"
+                                                size={120}
+                                                color="#CCCCCC"
+                                            />
+                                        </View>
 
-                                <Text style={styles.instrucao}>
-                                    Escaneie o QR Code com o aplicativo do seu banco
-                                </Text>
+                                        <Text style={styles.instrucao}>
+                                            Toque no botão abaixo para gerar a cobrança Pix
+                                        </Text>
+                                    </>
+                                )}
 
-                                <View style={styles.areaChave}>
-                                    <Text style={styles.labelChave}>Chave Pix</Text>
-                                    <Text style={styles.chave}>AQUI129458734</Text>
-                                </View>
+                                {pixGerado && pago && (
+                                    <>
+                                        <View style={styles.areaSucesso}>
+                                            <Ionicons
+                                                name="checkmark-circle"
+                                                size={90}
+                                                color="#59A83B"
+                                            />
+                                        </View>
 
-                                <TouchableOpacity
-                                    style={styles.botaoSecundario}
-                                    onPress={copiarChavePix}
-                                >
-                                    <Ionicons
-                                        name="copy-outline"
-                                        size={18}
-                                        color="#0047AB"
-                                    />
-                                    <Text style={styles.textoBotaoSecundario}>
-                                        Copiar chave Pix
-                                    </Text>
-                                </TouchableOpacity>
+                                        <Text style={styles.tituloSucesso}>
+                                            Pagamento confirmado!
+                                        </Text>
+
+                                        <Text style={styles.instrucao}>
+                                            Seu pagamento foi recebido. O comprovante
+                                            será enviado pelo escritório.
+                                        </Text>
+                                    </>
+                                )}
+
+                                {pixGerado && !pago && (
+                                    <>
+                                        <View style={styles.areaQrCode}>
+                                            <QRCode
+                                                value={
+                                                    pixGerado.codigo_pagamento ||
+                                                    "SEM_CODIGO"
+                                                }
+                                                size={220}
+                                                bgColor="#FFFFFF"
+                                                fgColor="#000000"
+                                                level="L"
+                                            />
+                                        </View>
+
+                                        <Text style={styles.instrucao}>
+                                            Escaneie o QR Code com o aplicativo do seu
+                                            banco ou copie o código abaixo
+                                        </Text>
+
+                                        <View style={styles.areaChave}>
+                                            <Text style={styles.labelChave}>
+                                                Código Pix
+                                            </Text>
+                                            <Text
+                                                style={styles.chave}
+                                                numberOfLines={3}
+                                            >
+                                                {pixGerado.codigo_pagamento || "—"}
+                                            </Text>
+                                        </View>
+
+                                        <TouchableOpacity
+                                            style={styles.botaoSecundario}
+                                            onPress={copiarCodigoPix}
+                                        >
+                                            <Ionicons
+                                                name="copy-outline"
+                                                size={18}
+                                                color="#0047AB"
+                                            />
+                                            <Text
+                                                style={styles.textoBotaoSecundario}
+                                            >
+                                                Copiar código Pix
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        <View style={styles.aguardandoBox}>
+                                            <ActivityIndicator
+                                                size="small"
+                                                color="#0047AB"
+                                            />
+                                            <Text style={styles.textoAguardando}>
+                                                Aguardando confirmação do pagamento...
+                                            </Text>
+                                        </View>
+                                    </>
+                                )}
                             </View>
                         </View>
                     )}
@@ -352,20 +508,46 @@ export default function RealizarPagamento({ navigation, route }) {
                         </View>
                     )}
 
-                    <Botao
-                        texto={
-                            formaPagamento === "pix"
-                                ? "Confirmar pagamento"
-                                : formaPagamento === "boleto"
-                                    ? "Gerar boleto"
-                                    : "Pagar agora"
-                        }
-                        acao={
-                            formaPagamento === "boleto" ? gerarBoleto : pagar
-                        }
-                    />
+                    {formaPagamento === "pix" && !pixGerado && (
+                        <Botao
+                            texto={"Gerar cobrança Pix"}
+                            acao={gerarPix}
+                        />
+                    )}
+
+                    {formaPagamento === "pix" && pixGerado && !pago && (
+                        <Botao
+                            texto={"Já efetuei o pagamento"}
+                            acao={() => {
+                                Alert.alert(
+                                    "Verificando...",
+                                    "Estamos confirmando o pagamento com o banco."
+                                );
+                            }}
+                        />
+                    )}
+
+                    {formaPagamento === "boleto" && (
+                        <Botao
+                            texto={"Gerar boleto"}
+                            acao={gerarBoleto}
+                        />
+                    )}
+
+                    {(formaPagamento === "debito" ||
+                        formaPagamento === "credito") && (
+                        <Botao
+                            texto={"Pagar agora"}
+                            acao={pagar}
+                        />
+                    )}
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            <Carregando
+                carregando={gerandoPix}
+                texto={"Gerando cobrança Pix..."}
+            />
         </View>
     );
 }
@@ -494,7 +676,21 @@ const styles = StyleSheet.create({
     areaQrCode: {
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 10
+        padding: 16,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 10,
+        minHeight: 220
+    },
+    areaSucesso: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 20
+    },
+    tituloSucesso: {
+        fontSize: 18,
+        fontFamily: "Inter_800ExtraBold",
+        color: "#59A83B",
+        textAlign: "center"
     },
     instrucao: {
         fontSize: 13,
@@ -515,10 +711,11 @@ const styles = StyleSheet.create({
         color: "#888888"
     },
     chave: {
-        fontSize: 13,
+        fontSize: 14,
         fontFamily: "Inter_700Bold",
         color: "#222222",
-        marginTop: 3
+        marginTop: 6,
+        textAlign: "center"
     },
     iconePagamentoGrande: {
         width: 100,
@@ -558,5 +755,19 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         gap: 12
     },
-    campoMetade: { flex: 1 }
+    campoMetade: { flex: 1 },
+    aguardandoBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        paddingVertical: 12,
+        backgroundColor: "#EEF5FF",
+        borderRadius: 8
+    },
+    textoAguardando: {
+        fontSize: 12,
+        fontFamily: "Inter_400Regular",
+        color: "#0047AB"
+    }
 });

@@ -3,8 +3,16 @@ import { Ionicons } from "@expo/vector-icons";
 import Botao from "./Botao";
 import React from "react";
 
-export default function CardPagamento({ dashboard = "", status = "pago", titulo, valor, data, acao, navigation }) {
-
+export default function CardPagamento({
+                                          dashboard = "",
+                                          status = "pago",
+                                          titulo,
+                                          valor,
+                                          data,
+                                          acao,
+                                          navigation,
+                                          pagamento
+                                      }) {
     const Vencido = status === "vencido";
     const Aberto = status === "aberto";
     const Pago = status === "pagos" || status === "pago";
@@ -13,11 +21,28 @@ export default function CardPagamento({ dashboard = "", status = "pago", titulo,
     const fundoIcone = Vencido ? "#FFE9EA" : Aberto ? "#FFF9E6" : "#EBF6E9";
     const nomeIcone = Pago ? "checkmark-done-outline" : "document-outline";
 
+    function abrirPagamento() {
+        if (Pago) return;
+
+        if (typeof acao === "function") {
+            acao();
+            return;
+        }
+
+        if (navigation && pagamento) {
+            navigation.navigate("RealizarPagamento", {
+                pagamento
+            });
+        }
+    }
+
     return (
-        <TouchableOpacity style={styles.cardPagamento} onPress={acao}>
-
+        <TouchableOpacity
+            style={styles.cardPagamento}
+            onPress={abrirPagamento}
+            activeOpacity={Pago ? 1 : 0.7}
+        >
             <View style={styles.topoCard}>
-
                 <View style={[styles.icone, { backgroundColor: fundoIcone }]}>
                     <Ionicons
                         name={nomeIcone}
@@ -41,11 +66,9 @@ export default function CardPagamento({ dashboard = "", status = "pago", titulo,
                         {valor}
                     </Text>
                 </View>
-
             </View>
 
             <View style={styles.informacoes}>
-
                 <View style={styles.blocoInformacao}>
                     <View style={styles.infoTitulo}>
                         <Ionicons
@@ -66,17 +89,25 @@ export default function CardPagamento({ dashboard = "", status = "pago", titulo,
                 <View style={styles.blocoInformacao}>
                     {Pago ? (
                         <View style={styles.statusPago}>
-                            <Text style={{ color: corStatus, fontFamily: "Inter_700Bold", fontSize: 14 }}>
+                            <Text
+                                style={{
+                                    color: corStatus,
+                                    fontFamily: "Inter_700Bold",
+                                    fontSize: 14
+                                }}
+                            >
                                 ✓ Concluído
                             </Text>
                         </View>
                     ) : (
-                        <Botao texto={"Pagar agora"} menor={true} acao={() => navigation.navigate("RealizarPagamento")} />
+                        <Botao
+                            texto={"Pagar agora"}
+                            menor={true}
+                            acao={abrirPagamento}
+                        />
                     )}
                 </View>
-
             </View>
-
         </TouchableOpacity>
     );
 }

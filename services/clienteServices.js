@@ -121,15 +121,14 @@ export async function editarPerfilCliente(campos, fotoUri) {
         const camposString = {};
 
         Object.entries(campos).forEach(([chave, valor]) => {
-            camposString[chave] =
-                valor === null || valor === undefined ? '' : String(valor);
+            camposString[chave] = valor === null || valor === undefined
+                ? ''
+                : String(valor);
         });
 
         if (fotoUri) {
-            const uploadUrl = `${API_URL}/editar_perfil_cliente`;
-
             const resultado = await FileSystem.uploadAsync(
-                uploadUrl,
+                `${API_URL}/editar_perfil_cliente`,
                 fotoUri,
                 {
                     httpMethod: 'PUT',
@@ -186,16 +185,85 @@ export async function editarPerfilCliente(campos, fotoUri) {
     }
 }
 
-export async function buscarProcessos() {
-    const { ok, dados } = await requisicaoAutenticada('/cliente/processos');
-    if (!ok) return { sucesso: false, mensagem: dados.error || 'Erro ao carregar processos.' };
-    return { sucesso: true, processos: dados.processos || [] };
+export async function criarCobrancaPix(idParcela, tipoParcela) {
+    const { ok, dados } = await requisicaoAutenticada(
+        '/cliente/pagamento/pix',
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                id_parcela: idParcela,
+                tipo_parcela: tipoParcela || 'prolabore'
+            })
+        }
+    );
+
+    console.log(">>> [CRIAR PIX] ok:", ok);
+    console.log(">>> [CRIAR PIX] dados:", JSON.stringify(dados, null, 2));
+
+    if (!ok) {
+        return {
+            sucesso: false,
+            mensagem: dados.error || 'Erro ao gerar cobrança Pix.'
+        };
+    }
+
+    return {
+        sucesso: true,
+        id_cobranca: dados.id_cobranca,
+        codigo_pagamento: dados.codigo_pagamento,
+        qr_code: dados.qr_code,
+        valor: dados.valor
+    };
+}
+
+export async function consultarCobrancaPix(idCobranca, idParcela, tipoParcela) {
+    const params = new URLSearchParams();
+
+    if (idParcela) params.append('id_parcela', String(idParcela));
+    if (tipoParcela) params.append('tipo_parcela', tipoParcela);
+
+    const query = params.toString();
+    const url = `/cliente/pagamento/pix/${idCobranca}${query ? '?' + query : ''}`;
+
+    const { ok, dados } = await requisicaoAutenticada(url);
+
+    if (!ok) {
+        return {
+            sucesso: false,
+            mensagem: dados.error || 'Erro ao consultar pagamento.'
+        };
+    }
+
+    return {
+        sucesso: true,
+        pago: dados.pago,
+        status: dados.status,
+        valor: dados.valor,
+        pago_em: dados.pago_em
+    };
 }
 
 
 
-export async function buscarPagamentos() {
-    const { ok, dados } = await requisicaoAutenticada('/cliente/pagamentos');
-    if (!ok) return { sucesso: false, mensagem: dados.error || 'Erro ao carregar pagamentos.' };
-    return { sucesso: true, pagamentos: dados.pagamentos || [] };
+export async function perguntarVeritas(pergunta, historico) {
+    const { ok, dados } = await requisicaoAutenticada('/ai/veritas', {
+        method: 'POST',
+        body: JSON.stringify({
+            pergunta,
+            historico: historico || []
+        })
+    });
+
+    if (!ok) {
+        return {
+            sucesso: false,
+            mensagem: dados.error || 'Erro ao consultar a Veritas.'
+        };
+    }
+
+    return {
+        sucesso: true,
+        resposta: dados.resposta || '',
+        acao_proposta: dados.acao_proposta || null
+    };
 }

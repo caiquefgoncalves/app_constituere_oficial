@@ -239,20 +239,39 @@ function HomeTabs() {
                     title: "Início",
                 }}
             />
+
             <Tab.Screen
                 name="Pagamentos"
                 component={PagamentoNavigator}
                 options={{
                     title: "Pagamentos",
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault();
+                        navigation.navigate("Pagamentos", {
+                            screen: "PagamentosInicio"
+                        });
+                    },
+                })}
             />
+
             <Tab.Screen
                 name="Reunioes"
                 component={ReunioesNavigator}
                 options={{
                     title: "Reuniões",
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault();
+                        navigation.navigate("Reunioes", {
+                            screen: "ReunioesInicio"
+                        });
+                    },
+                })}
             />
+
             <Tab.Screen
                 name="Processos"
                 component={Processos}
@@ -260,12 +279,21 @@ function HomeTabs() {
                     title: "Processos",
                 }}
             />
+
             <Tab.Screen
                 name="Perfil"
                 component={PerfilNavigator}
                 options={{
                     title: "Perfil",
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault();
+                        navigation.navigate("Perfil", {
+                            screen: "PerfilInicio"
+                        });
+                    },
+                })}
             />
         </Tab.Navigator>
     );

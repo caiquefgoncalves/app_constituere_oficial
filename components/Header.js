@@ -1,4 +1,10 @@
-import { Image, StyleSheet, TouchableOpacity, View, Text } from "react-native";
+import {
+    Image,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+    Text
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -6,9 +12,11 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { buscarNotificacoes } from "../services/clienteServices";
+import ChatVeritas from "./ChatVeritas";
 
 export default function Header({ navigation }) {
     const [naoLidas, setNaoLidas] = useState(0);
+    const [veritasAberto, setVeritasAberto] = useState(false);
 
     const carregarContador = useCallback(async () => {
         const resultado = await buscarNotificacoes();
@@ -33,18 +41,15 @@ export default function Header({ navigation }) {
     function irParaDashboard() {
         if (!navigation) return;
 
-        // Verifica se "Dashboard" existe no navigator atual
         const state = navigation.getState();
 
         const nomes = state.routeNames || [];
 
         if (nomes.includes("Dashboard")) {
-            // Estamos dentro do Tab Navigator → navega direto
             navigation.navigate("Dashboard");
             return;
         }
 
-        // Estamos fora (ex: tela de Notificações) → vai pro Stack raiz → Principal (Tab) → Dashboard
         navigation.navigate("Principal", { screen: "Dashboard" });
     }
 
@@ -60,7 +65,6 @@ export default function Header({ navigation }) {
             return;
         }
 
-        // Se estivermos dentro do Tab, sobe pro parent pra achar "Notificacoes"
         const parent = navigation.getParent();
 
         if (parent) {
@@ -79,49 +83,67 @@ export default function Header({ navigation }) {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={irParaDashboard}>
-                    <Image
-                        style={styles.logo}
-                        source={require('../assets/logoMaior.png')}
-                        resizeMode="contain"
-                    />
-                </TouchableOpacity>
-
-                <View style={styles.acoesDireita}>
-                    <TouchableOpacity
-                        style={styles.botaoNotificacao}
-                        onPress={abrirNotificacoes}
-                    >
-                        <Ionicons
-                            name="notifications-outline"
-                            size={35}
-                            color="white"
-                        />
-
-                        {naoLidas > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeTexto}>
-                                    {naoLidas > 99 ? "99+" : naoLidas}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.botaoSair}
-                        onPress={sair}
-                    >
-                        <Ionicons
-                            name="log-out-outline"
-                            size={35}
-                            color="white"
+        <>
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={irParaDashboard}>
+                        <Image
+                            style={styles.logo}
+                            source={require("../assets/logoMaior.png")}
+                            resizeMode="contain"
                         />
                     </TouchableOpacity>
+
+                    <View style={styles.acoesDireita}>
+                        <TouchableOpacity
+                            style={styles.botaoVeritas}
+                            onPress={() => setVeritasAberto(true)}
+                        >
+                            <Image
+                                source={require("../assets/veritas.png")}
+                                style={styles.imagemVeritas}
+                                resizeMode="cover"
+                            />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.botaoNotificacao}
+                            onPress={abrirNotificacoes}
+                        >
+                            <Ionicons
+                                name="notifications-outline"
+                                size={35}
+                                color="white"
+                            />
+
+                            {naoLidas > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeTexto}>
+                                        {naoLidas > 99 ? "99+" : naoLidas}
+                                    </Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.botaoSair}
+                            onPress={sair}
+                        >
+                            <Ionicons
+                                name="log-out-outline"
+                                size={35}
+                                color="white"
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
-        </View>
+
+            <ChatVeritas
+                visivel={veritasAberto}
+                onFechar={() => setVeritasAberto(false)}
+            />
+        </>
     );
 }
 
@@ -133,7 +155,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 30,
         justifyContent: "flex-end",
         borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
+        borderBottomRightRadius: 30
     },
     header: {
         flexDirection: "row",
@@ -143,25 +165,37 @@ const styles = StyleSheet.create({
     },
     logo: {
         width: 160,
-        height: 60,
+        height: 60
     },
     acoesDireita: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 12,
+        gap: 12
+    },
+    botaoVeritas: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        overflow: "hidden",
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    imagemVeritas: {
+        width: "100%",
+        height: "100%"
     },
     botaoNotificacao: {
         width: 35,
         height: 35,
         alignItems: "center",
         justifyContent: "center",
-        position: "relative",
+        position: "relative"
     },
     botaoSair: {
         width: 35,
         height: 35,
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "center"
     },
     badge: {
         position: "absolute",
@@ -175,12 +209,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         paddingHorizontal: 5,
         borderWidth: 2,
-        borderColor: "#2A2929",
+        borderColor: "#2A2929"
     },
     badgeTexto: {
         color: "#FFFFFF",
         fontSize: 11,
         fontFamily: "Inter_700Bold",
-        lineHeight: 13,
-    },
+        lineHeight: 13
+    }
 });
