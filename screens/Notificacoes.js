@@ -1,324 +1,231 @@
-import React, { useState } from "react";
-
+import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
     StyleSheet,
     ScrollView,
-    TouchableOpacity
+    TouchableOpacity,
+    ActivityIndicator
 } from "react-native";
-
-import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 import Header from "../components/Header";
 import Notificacao from "../components/Notificacao";
+import {
+    buscarNotificacoes,
+    marcarNotificacoesLidas
+} from "../services/clienteServices";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
+function tipoPorNotificacao(notif) {
+    const tipo = notif.tipo || '';
+
+    if (
+        tipo === 'NOVO_AGENDAMENTO' ||
+        tipo === 'AGENDAMENTO_CONFIRMADO_ADVOGADO' ||
+        tipo === 'AGENDAMENTO_CANCELADO' ||
+        tipo === 'AGENDAMENTO_DESMARCADO_ADVOGADO' ||
+        tipo === 'AGENDAMENTO_RECUSADO_ADVOGADO' ||
+        tipo === 'AGENDAMENTO_REAGENDADO'
+    ) {
+        return 'reuniao';
+    }
+
+    return 'pagamento';
+}
+
+function corPorNotificacao(notif) {
+    const tipo = notif.tipo || '';
+
+    if (
+        tipo.includes('CANCELADO') ||
+        tipo.includes('RECUSADO') ||
+        tipo.includes('DESMARCADO')
+    ) {
+        return { cor: '#FF4D55', fundo: '#FFE9EA', icone: 'close-circle-outline' };
+    }
+
+    if (tipo.includes('CONFIRMADO') || tipo.includes('ADICIONADO')) {
+        return { cor: '#59A83B', fundo: '#E9F8E4', icone: 'checkmark-circle-outline' };
+    }
+
+    return { cor: '#0047AB', fundo: '#EEF5FF', icone: 'information-circle-outline' };
+}
 
 export default function Notificacoes({ navigation }) {
-
     const [filtro, setFiltro] = useState("todas");
+    const [notificacoes, setNotificacoes] = useState([]);
+    const [carregando, setCarregando] = useState(true);
 
-    const [notificacoes, setNotificacoes] = useState([
+    const carregar = useCallback(async () => {
+        setCarregando(true);
 
-        {
-            id: 1,
-            tipo: "reuniao",
-            status: "confirmada",
-            titulo: "Reunião confirmada",
-            mensagem: "Sua reunião com Dr. Carlos Mendes foi confirmada para 03/08/2026 às 14:30.",
-            tempo: "Há 10 minutos",
-        },
+        const resultado = await buscarNotificacoes();
 
-        {
-            id: 2,
-            tipo: "pagamento",
-            status: "proximo",
-            titulo: "Pagamento próximo",
-            mensagem: "Você possui um pagamento de R$ 1.000,00 com vencimento em 02/10/2026.",
-            tempo: "Há 2 horas",
-        },
+        if (resultado.sucesso) {
+            setNotificacoes(resultado.notificacoes);
 
-        {
-            id: 3,
-            tipo: "reuniao",
-            status: "cancelada",
-            titulo: "Reunião cancelada",
-            mensagem: "A reunião sobre Andamento do Processo, marcada para 30/07/2026, foi cancelada.",
-            tempo: "Ontem",
-        },
-
-        {
-            id: 4,
-            tipo: "pagamento",
-            status: "pago",
-            titulo: "Pagamento realizado",
-            mensagem: "O pagamento de R$ 850,00 foi registrado com sucesso.",
-            tempo: "25/07/2026",
+            // Marca todas como lidas no backend depois de exibir
+            await marcarNotificacoesLidas();
         }
 
-    ]);
+        setCarregando(false);
+    }, []);
 
+    useFocusEffect(
+        useCallback(() => {
+            carregar();
+        }, [carregar])
+    );
 
-    function pegarCor(item) {
+    useAutoRefresh(carregar, ["notificacao", "todas"]);
 
-        if (item.status === "confirmada") {
-            return "#59A83B";
-        }
-
-        if (item.status === "cancelada") {
-            return "#FF4D55";
-        }
-
-        if (item.status === "proximo") {
-            return "#E6B000";
-        }
-
-        return "#59A83B";
-    }
-
-
-    function pegarFundo(item) {
-
-        if (item.status === "confirmada") {
-            return "#E9F8E4";
-        }
-
-        if (item.status === "cancelada") {
-            return "#FFE9EA";
-        }
-
-        if (item.status === "proximo") {
-            return "#FFF6D9";
-        }
-
-        return "#E9F8E4";
-    }
-
-
-    function pegarIcone(item) {
-
-        if (item.status === "confirmada") {
-            return "calendar-outline";
-        }
-
-        if (item.status === "cancelada") {
-            return "close-circle-outline";
-        }
-
-        if (item.status === "proximo") {
-            return "wallet-outline";
-        }
-
-        return "checkmark-circle-outline";
-    }
-
+    const filtradas = notificacoes.filter((item) => {
+        if (filtro === 'todas') return true;
+        return tipoPorNotificacao(item) === filtro;
+    });
 
     return (
         <View style={styles.container}>
-
             <Header navigation={navigation} />
-
 
             <ScrollView
                 contentContainerStyle={styles.main}
                 showsVerticalScrollIndicator={false}
             >
-
-
                 <View style={styles.cabecalho}>
-
-                    <View style={styles.textosCabecalho}>
-
-                        <Text style={styles.titulo}>
-                            Notificações
-                        </Text>
-
-                    </View>
-
+                    <Text style={styles.titulo}>Notificações</Text>
                 </View>
 
                 <View style={styles.abas}>
-
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("todas")}
                     >
-
                         <Text
                             style={[
                                 styles.textoAba,
-                                filtro === "todas" &&
-                                styles.abaAtiva
+                                filtro === "todas" && styles.abaAtiva
                             ]}
                         >
                             Todas
                         </Text>
-
-                        {filtro === "todas" && (
-                            <View style={styles.linhaAtiva} />
-                        )}
-
+                        {filtro === "todas" && <View style={styles.linhaAtiva} />}
                     </TouchableOpacity>
-
 
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("reuniao")}
                     >
-
                         <Text
                             style={[
                                 styles.textoAba,
-                                filtro === "reuniao" &&
-                                styles.abaAtiva
+                                filtro === "reuniao" && styles.abaAtiva
                             ]}
                         >
                             Reuniões
                         </Text>
-
-                        {filtro === "reuniao" && (
-                            <View style={styles.linhaAtiva} />
-                        )}
-
+                        {filtro === "reuniao" && <View style={styles.linhaAtiva} />}
                     </TouchableOpacity>
-
 
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("pagamento")}
                     >
-
                         <Text
                             style={[
                                 styles.textoAba,
-                                filtro === "pagamento" &&
-                                styles.abaAtiva
+                                filtro === "pagamento" && styles.abaAtiva
                             ]}
                         >
                             Pagamentos
                         </Text>
-
-                        {filtro === "pagamento" && (
-                            <View style={styles.linhaAtiva} />
-                        )}
-
+                        {filtro === "pagamento" && <View style={styles.linhaAtiva} />}
                     </TouchableOpacity>
-
                 </View>
 
+                {carregando ? (
+                    <ActivityIndicator size="large" color="#0047AB" />
+                ) : filtradas.length === 0 ? (
+                    <Text style={styles.vazio}>
+                        Nenhuma notificação encontrada.
+                    </Text>
+                ) : (
+                    <View style={styles.lista}>
+                        {filtradas.map((item) => {
+                            const visual = corPorNotificacao(item);
 
-
-                <View style={styles.lista}>
-
-                    {notificacoes
-                        .filter((item) =>
-                            filtro === "todas" ||
-                            item.tipo === filtro
-                        )
-                        .map((item) => (
-                            <Notificacao
-                                id={item.id}
-                                titulo={item.titulo}
-                                mensagem={item.mensagem}
-                                tempo={item.tempo}
-                                cor={pegarCor(item)}
-                                nome={pegarIcone(item)}
-                                corFundo={pegarFundo(item)}
-                            />
-
-                        ))}
-
-                </View>
-
+                            return (
+                                <Notificacao
+                                    key={item.id}
+                                    id={item.id}
+                                    titulo={item.titulo}
+                                    mensagem={item.mensagem}
+                                    tempo={item.data_criacao || ""}
+                                    cor={visual.cor}
+                                    nome={visual.icone}
+                                    corFundo={visual.fundo}
+                                />
+                            );
+                        })}
+                    </View>
+                )}
             </ScrollView>
-
         </View>
     );
 }
 
-
-
 const styles = StyleSheet.create({
-
-    container: {
-        flex: 1,
-    },
-
-
+    container: { flex: 1 },
     main: {
         paddingVertical: 20,
         paddingHorizontal: 30,
         paddingBottom: 120,
-        gap: 20,
+        gap: 20
     },
-
-
-
     cabecalho: {
         width: "100%",
-
         flexDirection: "row",
         alignItems: "flex-end",
-        justifyContent: "space-between",
+        justifyContent: "space-between"
     },
-
-    textosCabecalho: {
-        flex: 1,
-    },
-
     titulo: {
         fontSize: 25,
         fontFamily: "Inter_700Bold",
-        color: "#000000",
+        color: "#000000"
     },
-
-
     abas: {
         width: "100%",
-
         flexDirection: "row",
-
         borderBottomWidth: 1,
-        borderBottomColor: "#E2E2E2",
+        borderBottomColor: "#E2E2E2"
     },
-
     aba: {
         flex: 1,
         alignItems: "center",
-
         paddingBottom: 10,
-
-        position: "relative",
+        position: "relative"
     },
-
     textoAba: {
         fontSize: 15,
         fontFamily: "Inter_700Bold",
-        color: "#999999",
+        color: "#999999"
     },
-
-    abaAtiva: {
-        color: "#0047AB",
-    },
-
+    abaAtiva: { color: "#0047AB" },
     linhaAtiva: {
         position: "absolute",
-
         bottom: -1,
-
         width: "70%",
         height: 3,
-
         backgroundColor: "#0047AB",
-
-        borderRadius: 3,
+        borderRadius: 3
     },
-
-
-
-    lista: {
-        width: "100%",
-        gap: 12,
-    },
-
+    lista: { width: "100%", gap: 12 },
+    vazio: {
+        fontSize: 14,
+        fontFamily: "Inter_400Regular",
+        color: "#888888",
+        textAlign: "center",
+        marginTop: 20
+    }
 });

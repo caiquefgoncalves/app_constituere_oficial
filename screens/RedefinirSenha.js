@@ -31,29 +31,29 @@ export default function RedefinirSenha({ navigation }) {
                 bounces={false}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.header}>
-                    <Image
-                        source={require("../assets/logoMaior.png")}
-                        style={styles.logo}
-                        resizeMode="contain"
+            <View style={styles.header}>
+                <Image
+                    source={require("../assets/logoMaior.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
+                <Text style={styles.titulo}>Redefinir senha</Text>
+                <Text style={styles.texto}>Para sua segurança, altere sua senha para uma personalizada e única</Text>
+            </View>
+
+            <View style={styles.main}>
+
+                <Input label={"Senha:"} tipo={"numeric"} valor={senha} setValor={setSenha} senha={true}/>
+
+                <Input label={"Confirmar senha:"} tipo={"numeric"} valor={confirmarSenha} setValor={setconfirmarSenha} senha={true}/>
+
+                <View style={styles.areaBotao}>
+                    <Botao
+                        texto="Redefinir sua senha"
+                        acao={entrar}
                     />
-                    <Text style={styles.titulo}>Redefinir senha</Text>
-                    <Text style={styles.texto}>Para sua segurança, altere sua senha para uma personalizada e única</Text>
                 </View>
-
-                <View style={styles.main}>
-
-                    <Input label={"Senha:"} tipo={"numeric"} valor={senha} setValor={setSenha} senha={true}/>
-
-                    <Input label={"Confirmar senha:"} tipo={"numeric"} valor={confirmarSenha} setValor={setconfirmarSenha} senha={true}/>
-
-                    <View style={styles.areaBotao}>
-                        <Botao
-                            texto="Redefinir sua senha"
-                            acao={entrar}
-                        />
-                    </View>
-                </View>
+            </View>
             </ScrollView>
         </KeyboardAvoidingView>
 
@@ -100,9 +100,9 @@ const styles = StyleSheet.create({
     },
 
     texto: {
-        paddingLeft: 10,
-        color: "#FFFFFF",
-        fontFamily: "Inter_400Regular_Italic",
+      paddingLeft: 10,
+      color: "#FFFFFF",
+      fontFamily: "Inter_400Regular_Italic",
         fontSize: 16,
         width: "90%",
     },

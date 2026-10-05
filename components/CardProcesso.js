@@ -5,7 +5,6 @@ import React from "react";
 export default function CardProcesso({id, tipo, numero, advogados, status}) {
     return (
         <View
-            key={id}
             style={styles.cardProcesso}
         >
 

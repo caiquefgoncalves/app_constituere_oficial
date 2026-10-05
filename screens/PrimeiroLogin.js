@@ -93,7 +93,7 @@ export default function PrimeiroLogin({ navigation }) {
 
             Alert.alert("Pronto", "Sua senha foi redefinida com sucesso.");
 
-            navigation.navigate("Dashboard");
+            navigation.navigate("Principal");
 
         } catch (erro) {
             setCarregando(false);

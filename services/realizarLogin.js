@@ -4,8 +4,6 @@ import { requisicao } from './api';
 import { getBiometria } from './getBiometria';
 import { ativarBiometria, desativarBiometria, biometriaAtiva } from './biometriaStorage';
 
-const TIPOS_PERMITIDOS_APP = [2, 3];
-
 function perguntarAtivarBiometria() {
     return new Promise((resolve) => {
         Alert.alert(
@@ -30,8 +28,6 @@ function perguntarAtivarBiometria() {
 export async function login(cpf, senha) {
     const cpfLimpo = String(cpf || '').replace(/\D/g, '');
 
-    console.log('[AUTH] CPF limpo:', cpfLimpo);
-
     if (!cpfLimpo) {
         return { sucesso: false, mensagem: 'Informe o CPF.' };
     }
@@ -53,10 +49,6 @@ export async function login(cpf, senha) {
             })
         });
 
-        console.log('[AUTH] Status da resposta:', status);
-        console.log('[AUTH] Ok:', ok);
-        console.log('[AUTH] Dados da resposta:', JSON.stringify(dados));
-
         if (status === 401 || status === 403) {
             return {
                 sucesso: false,
@@ -71,26 +63,13 @@ export async function login(cpf, senha) {
             };
         }
 
-        if (!TIPOS_PERMITIDOS_APP.includes(dados.tipo)) {
-            return {
-                sucesso: false,
-                mensagem: 'Este aplicativo é destinado apenas a clientes. Advogados e escritórios devem usar o sistema web.'
-            };
-        }
-
         const precisaRedefinir = dados.primeiro_acesso === true || dados.primeiro_acesso === 1;
 
-        try {
-            await AsyncStorage.setItem('token', dados.token);
-            await AsyncStorage.setItem('nome', dados.nome || '');
-            await AsyncStorage.setItem('tipo', String(dados.tipo));
-            await AsyncStorage.setItem('id_usuario', String(dados.id_usuario));
-            await AsyncStorage.setItem('precisa_redefinir_senha', precisaRedefinir ? 'true' : 'false');
-
-            console.log('[AUTH] Dados salvos no AsyncStorage.');
-        } catch (erroStorage) {
-            console.log('[AUTH] Erro ao salvar no AsyncStorage:', erroStorage);
-        }
+        await AsyncStorage.setItem('token', dados.token);
+        await AsyncStorage.setItem('nome', dados.nome || '');
+        await AsyncStorage.setItem('tipo', String(dados.tipo));
+        await AsyncStorage.setItem('id_usuario', String(dados.id_usuario));
+        await AsyncStorage.setItem('precisa_redefinir_senha', precisaRedefinir ? 'true' : 'false');
 
         if (!precisaRedefinir) {
             try {
@@ -104,13 +83,8 @@ export async function login(cpf, senha) {
 
                         if (biometriaOk) {
                             await ativarBiometria(dados.id_usuario);
-                            console.log('[AUTH] Biometria ativada para', dados.id_usuario);
-                        } else {
-                            console.log('[AUTH] Biometria não validada.');
                         }
                     }
-                } else {
-                    console.log('[AUTH] Biometria já estava ativa.');
                 }
             } catch (erroBiometria) {
                 console.log('[AUTH] Erro no fluxo de biometria:', erroBiometria);
@@ -129,8 +103,6 @@ export async function login(cpf, senha) {
         };
 
     } catch (erro) {
-        console.log('[AUTH] Exceção capturada:', erro);
-
         return {
             sucesso: false,
             mensagem: erro?.message || 'Erro de conexão com o servidor.'
@@ -147,8 +119,6 @@ export async function logout() {
             'id_usuario',
             'precisa_redefinir_senha'
         ]);
-
-        console.log('[AUTH] Token e dados locais removidos.');
     } catch (erro) {
         console.log('[AUTH] Erro no logout:', erro);
     }

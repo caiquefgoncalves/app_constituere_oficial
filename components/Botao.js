@@ -13,7 +13,7 @@ export default function Botao({ texto, acao, cor = 'azul', menor = false }) {
             <Text style={[
                 styles.texto,
                 styles[`texto${cor}`],
-                menor && { fontSize: 13 }
+                menor && { fontSize: 14 }
             ]}>
                 {texto}
             </Text>

@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Botao from "./Botao";
 import React from "react";
 
-export default function CardPagamento({ dashboard = "", status = "pago", titulo, valor, data, acao }) {
+export default function CardPagamento({ dashboard = "", status = "pago", titulo, valor, data, acao, navigation }) {
 
     const Vencido = status === "vencido";
     const Aberto = status === "aberto";
@@ -71,7 +71,7 @@ export default function CardPagamento({ dashboard = "", status = "pago", titulo,
                             </Text>
                         </View>
                     ) : (
-                        <Botao texto={"Pagar agora"} menor={true} />
+                        <Botao texto={"Pagar agora"} menor={true} acao={() => navigation.navigate("RealizarPagamento")} />
                     )}
                 </View>
 

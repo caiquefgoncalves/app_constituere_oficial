@@ -1,26 +1,82 @@
-import React, { useState } from "react";
-
+import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     ScrollView,
+    ActivityIndicator
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
-import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/Header";
-import Botao from "../components/Botao";
 import CardValores from "../components/CardValores";
 import CardPagamento from "../components/CardPagamento";
+import { buscarPagamentos } from "../services/clienteServices";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
-export default function PagamentoAberto({ navigation }) {
+function formatarDinheiro(valor) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+}
 
+export default function Pagamento({ navigation }) {
     const [filtro, setFiltro] = useState("aberto");
+    const [pagamentos, setPagamentos] = useState([]);
+    const [carregando, setCarregando] = useState(true);
+
+    const carregar = useCallback(async () => {
+        setCarregando(true);
+
+        const resultado = await buscarPagamentos();
+
+        if (resultado.sucesso) {
+            setPagamentos(resultado.pagamentos);
+        }
+
+        setCarregando(false);
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            carregar();
+        }, [carregar])
+    );
+
+    useAutoRefresh(carregar, ["processo", "notificacao"]);
+
+    const vencidos = pagamentos.filter((p) => p.status === "Atrasada");
+    const emAberto = pagamentos.filter((p) => p.status === "A pagar");
+    const pagos = pagamentos.filter((p) => p.status === "Paga");
+
+    const totalVencido = vencidos.reduce((s, p) => s + Number(p.valor || 0), 0);
+    const totalEmAberto = emAberto.reduce((s, p) => s + Number(p.valor || 0), 0);
+    const totalPago = pagos.reduce((s, p) => s + Number(p.valor || 0), 0);
+
+    const resumoPagamentos = [
+        { id: 1, titulo: "Vencido", valor: formatarDinheiro(totalVencido) },
+        { id: 2, titulo: "Em aberto", valor: formatarDinheiro(totalEmAberto) },
+        { id: 3, titulo: "Pago", valor: formatarDinheiro(totalPago) }
+    ];
+
+    const pagamentosFiltrados = pagamentos.filter((item) => {
+        if (filtro === "vencido") return item.status === "Atrasada";
+        if (filtro === "aberto") return item.status === "A pagar";
+        if (filtro === "pagos") return item.status === "Paga";
+        return true;
+    });
+
+    function statusParaCard(status) {
+        if (status === "Atrasada") return "vencido";
+        if (status === "A pagar") return "aberto";
+        if (status === "Paga") return "pago";
+        return status;
+    }
 
     return (
         <View style={styles.container}>
-
             <Header navigation={navigation} />
 
             <ScrollView
@@ -28,29 +84,28 @@ export default function PagamentoAberto({ navigation }) {
                 contentContainerStyle={styles.main}
                 showsVerticalScrollIndicator={false}
             >
-
                 <View>
-                    <Text style={styles.titulo}>
-                        Pagamentos
-                    </Text>
-
+                    <Text style={styles.titulo}>Pagamentos</Text>
                     <Text style={styles.subtitulo}>
                         Acompanhe seus pagamentos e cobranças
                     </Text>
                 </View>
 
-
-                <ScrollView horizontal={true} contentContainerStyle={styles.resumo}>
-                    <CardValores valor={"700,00"} titulo={"Vencido"} />
-                    <CardValores valor={"1.000,00"} titulo={"Em aberto"} />
-                    <CardValores valor={"200,00"} titulo={"Pago"} />
-
-
+                <ScrollView
+                    horizontal={true}
+                    contentContainerStyle={styles.resumo}
+                    showsHorizontalScrollIndicator={false}
+                >
+                    {resumoPagamentos.map((item) => (
+                        <CardValores
+                            key={item.id}
+                            valor={item.valor}
+                            titulo={item.titulo}
+                        />
+                    ))}
                 </ScrollView>
 
-
                 <View style={styles.abas}>
-
                     <TouchableOpacity
                         style={styles.aba}
                         onPress={() => setFiltro("vencido")}
@@ -63,12 +118,8 @@ export default function PagamentoAberto({ navigation }) {
                         >
                             Vencido
                         </Text>
-
-                        {filtro === "vencido" && (
-                            <View style={styles.linhaAtiva} />
-                        )}
+                        {filtro === "vencido" && <View style={styles.linhaAtiva} />}
                     </TouchableOpacity>
-
 
                     <TouchableOpacity
                         style={styles.aba}
@@ -82,12 +133,8 @@ export default function PagamentoAberto({ navigation }) {
                         >
                             A Vencer
                         </Text>
-
-                        {filtro === "aberto" && (
-                            <View style={styles.linhaAtiva} />
-                        )}
+                        {filtro === "aberto" && <View style={styles.linhaAtiva} />}
                     </TouchableOpacity>
-
 
                     <TouchableOpacity
                         style={styles.aba}
@@ -101,238 +148,91 @@ export default function PagamentoAberto({ navigation }) {
                         >
                             Pagos
                         </Text>
-
-                        {filtro === "pagos" && (
-                            <View style={styles.linhaAtiva} />
-                        )}
+                        {filtro === "pagos" && <View style={styles.linhaAtiva} />}
                     </TouchableOpacity>
-
                 </View>
 
-
-                {filtro === "vencido" && (
-                    <CardPagamento titulo={"Honorário"} valor={"800,00"} status={"vencido"} data={"01/09/2026"}/>
+                {carregando ? (
+                    <ActivityIndicator size="large" color="#0047AB" />
+                ) : pagamentosFiltrados.length === 0 ? (
+                    <Text style={styles.vazio}>Nenhum pagamento encontrado.</Text>
+                ) : (
+                    <View style={styles.listaPagamentos}>
+                        {pagamentosFiltrados.map((item) => (
+                            <CardPagamento
+                                key={item.id}
+                                titulo={item.nome}
+                                valor={formatarDinheiro(item.valor)}
+                                status={statusParaCard(item.status)}
+                                data={item.vencimento}
+                                navigation={navigation}
+                                pagamento={item}
+                            />
+                        ))}
+                    </View>
                 )}
-
-
-                {filtro === "aberto" && (
-                    <CardPagamento titulo={"Pró-labore"} valor={"300,00"} status={"aberto"} data={"01/10/2026"}/>
-
-                )}
-
-
-                {filtro === "pagos" && (
-                    <CardPagamento titulo={"Entrada"} valor={"1.000,00"} status={"pago"} data={"01/07/2026"}/>
-
-                )}
-
             </ScrollView>
-
         </View>
     );
 }
 
-
 const styles = StyleSheet.create({
-
-    container: {
-        flex: 1,
-    },
-
-    scroll: {
-        flex: 1,
-        width: '100%',
-    },
-
+    container: { flex: 1 },
+    scroll: { flex: 1, width: "100%" },
     main: {
         paddingVertical: 20,
         paddingHorizontal: 30,
         gap: 20,
-        paddingBottom: 120,
+        paddingBottom: 120
     },
-
-
-
     titulo: {
         fontSize: 25,
         fontFamily: "Inter_700Bold",
-        color: "#000000",
+        color: "#000000"
     },
-
     subtitulo: {
         fontSize: 14,
         fontFamily: "Inter_400Regular",
         color: "#666666",
-        marginTop: 3,
+        marginTop: 3
     },
-
-
     resumo: {
         flexDirection: "row",
         alignItems: "center",
         gap: 10
     },
-
-
-    coluna: {
-        flex: 1,
-        alignItems: "center",
-    },
-
-
     abas: {
         width: "100%",
         flexDirection: "row",
         borderBottomWidth: 1,
-        borderBottomColor: "#E2E2E2",
+        borderBottomColor: "#E2E2E2"
     },
-
     aba: {
         flex: 1,
         alignItems: "center",
         paddingBottom: 10,
-        position: "relative",
+        position: "relative"
     },
-
     textoAba: {
         fontSize: 15,
         fontFamily: "Inter_700Bold",
-        color: "#999999",
+        color: "#999999"
     },
-
-    abaAtiva: {
-        color: "#0047AB",
-    },
-
+    abaAtiva: { color: "#0047AB" },
     linhaAtiva: {
         position: "absolute",
         bottom: -1,
         width: "70%",
         height: 3,
         backgroundColor: "#0047AB",
-        borderRadius: 3,
+        borderRadius: 3
     },
-
-
-
-    cardPagamento: {
-        width: "100%",
-        backgroundColor: "#FFFFFF",
-        borderRadius: 10,
-        padding: 18,
-
-        elevation: 3,
-
-        shadowColor: "#000000",
-        shadowOpacity: 0.08,
-        shadowRadius: 5,
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-
-        gap: 20,
-    },
-
-    topoCard: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-
-    infoProcesso: {
-        flex: 1,
-    },
-
-    iconeDocumentoVermelho: {
-        width: 42,
-        height: 42,
-        borderRadius: 8,
-        backgroundColor: "#FFE9EA",
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 12,
-    },
-
-    iconeDocumentoAmarelo: {
-        width: 42,
-        height: 42,
-        borderRadius: 8,
-        backgroundColor: "#FFF6D9",
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 12,
-    },
-
-    iconeDocumentoVerde: {
-        width: 42,
-        height: 42,
-        borderRadius: 8,
-        backgroundColor: "#E9F8E4",
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 12,
-    },
-
-    honorario: {
-        fontSize: 18,
-        fontFamily: "Inter_700Bold",
-        color: "#222222",
-    },
-
-    processo: {
-        fontSize: 13,
-        color: "#999999",
-        marginTop: 3,
-        fontFamily: "Inter_400Regular_Italic",
-    },
-
-
-
-    informacoes: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        gap: 20,
-    },
-
-    blocoInformacao: {
-        flex: 1,
-    },
-
-    infoTitulo: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 7,
-    },
-
-    infoTexto: {
+    listaPagamentos: { width: "100%", gap: 12 },
+    vazio: {
         fontSize: 14,
-        color: "#777777",
         fontFamily: "Inter_400Regular",
-        marginBottom: 5,
-    },
-
-    infoValor: {
-        fontSize: 15,
-        color: "#333333",
-        fontFamily: "Inter_700Bold",
-    },
-
-    valorVermelho: {
-        color: "#FF4D55",
-        fontSize: 15,
-        fontFamily: "Inter_700Bold",
-    },
-
-    valorAmarelo: {
-        color: "#E6B000",
-        fontSize: 15,
-        fontFamily: "Inter_700Bold",
-    },
-
-    valorVerde: {
-        color: "#59A83B",
-        fontSize: 15,
-        fontFamily: "Inter_700Bold",
-    },
-
+        color: "#888888",
+        textAlign: "center",
+        marginTop: 20
+    }
 });

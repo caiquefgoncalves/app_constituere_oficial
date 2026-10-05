@@ -36,7 +36,7 @@ function perguntarAtivarBiometria() {
     });
 }
 
-export default function Home({navigation}) {
+export default function Home({ navigation }) {
 
     const [logado, setLogado] = useState(false);
     const [idUsuario, setIdUsuario] = useState(null);
@@ -54,7 +54,7 @@ export default function Home({navigation}) {
                 if (!ativo) return;
 
                 if (precisaRedefinir === 'true') {
-                    navigation.navigate('RedefinirSenha');
+                    navigation.navigate('PrimeiroLogin');
                     return;
                 }
 
@@ -101,14 +101,14 @@ export default function Home({navigation}) {
                     }
                 }
 
-                navigation.navigate("Dashboard");
+                navigation.navigate("Principal");
                 return;
             }
 
             const biometriaOk = await getBiometria();
 
             if (biometriaOk) {
-                navigation.navigate("Dashboard");
+                navigation.navigate("Principal");
             } else {
                 Alert.alert(
                     'Biometria não reconhecida',
@@ -132,7 +132,7 @@ export default function Home({navigation}) {
 
         navigation.reset({
             index: 0,
-            routes: [{name: 'Login'}]
+            routes: [{ name: 'Login' }]
         });
     }
 
@@ -141,7 +141,7 @@ export default function Home({navigation}) {
             <View style={styles.container}>
 
                 <View style={styles.header}>
-                    <Image style={styles.logo} source={require("../assets/logoMenor.png")}/>
+                    <Image style={styles.logo} source={require("../assets/logoMenor.png")} />
                 </View>
 
                 <LinearGradient
@@ -230,7 +230,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderColor: "#FFFFFF",
         borderWidth: 0.9,
-
     },
     textoBotaoRealizarLogin: {
         color: 'white',
@@ -238,10 +237,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 2,
         fontFamily: 'Inter_700Bold',
-
     },
     transicaoGradiente: {
         width: '100%',
         height: 200,
+    },
+
+    logo: {
+        width: 90,
+        height: 75,
     },
 });

@@ -1,699 +1,405 @@
-import React from "react";
-
+import React, { useEffect, useState, useCallback } from "react";
 import {
     View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    ActivityIndicator,
     Image
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 import Header from "../components/Header";
 import Botao from "../components/Botao";
+import CampoPerfil from "../components/CampoPerfil";
+import { buscarMeusDados } from "../services/clienteServices";
+import { API_URL } from "../services/api";
 
+function formatarCpf(valor) {
+    if (!valor) return "--";
+    const n = String(valor).replace(/\D/g, "");
+    if (n.length !== 11) return valor;
+    return `${n.slice(0, 3)}.${n.slice(3, 6)}.${n.slice(6, 9)}-${n.slice(9)}`;
+}
+
+function formatarTelefone(valor) {
+    if (!valor) return "--";
+    const n = String(valor).replace(/\D/g, "");
+    if (n.length === 11) {
+        return `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7)}`;
+    }
+    if (n.length === 10) {
+        return `(${n.slice(0, 2)}) ${n.slice(2, 6)}-${n.slice(6)}`;
+    }
+    return valor;
+}
 
 export default function Perfil({ navigation }) {
+    const [usuario, setUsuario] = useState(null);
+    const [carregando, setCarregando] = useState(true);
+    const [fotoErro, setFotoErro] = useState(false);
+    const [versaoFoto, setVersaoFoto] = useState(Date.now());
 
-    const fotoPerfil = null;
+    const carregar = useCallback(async () => {
+        const resultado = await buscarMeusDados();
+
+        if (resultado.sucesso) {
+            setUsuario(resultado.usuario);
+            setFotoErro(false);
+            setVersaoFoto(Date.now());
+        }
+
+        setCarregando(false);
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            carregar();
+        }, [carregar])
+    );
+
+    const juridico = usuario?.tipo === 3;
+
+    const urlFoto = usuario?.id
+        ? `${API_URL}/uploads/Usuarios/${usuario.id}.jpeg?v=${versaoFoto}`
+        : null;
+
+    const mostrarFoto = urlFoto && !fotoErro;
+
+    if (carregando) {
+        return (
+            <View style={styles.container}>
+                <Header navigation={navigation} />
+                <View style={styles.carregandoBox}>
+                    <ActivityIndicator size="large" color="#0047AB" />
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
-
             <Header navigation={navigation} />
 
             <ScrollView
                 contentContainerStyle={styles.main}
                 showsVerticalScrollIndicator={false}
             >
-
-
                 <View>
-
-                    <Text style={styles.titulo}>
-                        Perfil
-                    </Text>
-
+                    <Text style={styles.titulo}>Perfil</Text>
                     <Text style={styles.subtitulo}>
                         Consulte e gerencie seus dados pessoais
                     </Text>
-
                 </View>
-
 
                 <View style={styles.cardPerfil}>
-
                     <View style={styles.areaFoto}>
                         <View style={styles.fotoPadrao}>
-
-                            <Ionicons
-                                name="person-outline"
-                                size={45}
-                                color="#0047AB"
-                            />
-
+                            {mostrarFoto ? (
+                                <Image
+                                    source={{ uri: urlFoto }}
+                                    style={styles.foto}
+                                    onError={() => setFotoErro(true)}
+                                />
+                            ) : (
+                                <Ionicons
+                                    name="person-outline"
+                                    size={45}
+                                    color="#0047AB"
+                                />
+                            )}
                         </View>
-
-
                     </View>
-
 
                     <View style={styles.infoPrincipal}>
-
                         <Text style={styles.nome}>
-                            Nome Completo
+                            {usuario?.nome || "Cliente"}
                         </Text>
-
                         <Text style={styles.emailPrincipal}>
-                            email@email.com
+                            {usuario?.email || "--"}
                         </Text>
-
                     </View>
-
                 </View>
-
-
 
                 <Botao
                     texto={"Editar perfil"}
                     acao={() =>
-                        navigation.navigate("EditarPerfil")
+                        navigation.navigate("EditarPerfil", {
+                            tipoCliente: juridico ? "juridico" : "fisico"
+                        })
                     }
                 />
 
-
-                <View style={styles.secao}>
-
-                    <View style={styles.tituloSecaoArea}>
-
-                        <View style={styles.iconeSecao}>
-
-                            <Ionicons
-                                name="person-outline"
-                                size={21}
-                                color="#0047AB"
-                            />
-
+                <View style={styles.gap}>
+                    <View style={styles.secao}>
+                        <View style={styles.tituloSecaoArea}>
+                            <View style={styles.iconeSecao}>
+                                <Ionicons
+                                    name="person-outline"
+                                    size={21}
+                                    color="#0047AB"
+                                />
+                            </View>
+                            <Text style={styles.tituloSecao}>
+                                Dados pessoais
+                            </Text>
                         </View>
 
-                        <Text style={styles.tituloSecao}>
-                            Dados pessoais
-                        </Text>
-
-                    </View>
-
-
-                    <View style={styles.card}>
-
-                        <CampoPerfil
-                            label={"Nome Completo"}
-                            valor={"Nome Completo do Cliente"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Data de nascimento"}
-                            valor={"01/01/2000"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"CPF"}
-                            valor={"000.000.000-00"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Sexo"}
-                            valor={"Feminino"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"RG"}
-                            valor={"00.000.000-0"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Órgão expedidor"}
-                            valor={"SSP/SP"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Nacionalidade"}
-                            valor={"Brasileira"}
-                        />
-
-                    </View>
-
-                </View>
-
-
-                <View style={styles.secao}>
-
-                    <View style={styles.tituloSecaoArea}>
-
-                        <View style={styles.iconeSecao}>
-
-                            <Ionicons
-                                name="briefcase-outline"
-                                size={21}
-                                color="#0047AB"
+                        <View style={styles.card}>
+                            <CampoPerfil
+                                label={"Nome"}
+                                valor={usuario?.nome || "--"}
                             />
+                            <View style={styles.divisoria} />
 
+                            <CampoPerfil
+                                label={"CPF"}
+                                valor={formatarCpf(usuario?.cpf)}
+                            />
+                            <View style={styles.divisoria} />
+
+                            <CampoPerfil
+                                label={"RG"}
+                                valor={usuario?.rg || "--"}
+                            />
+                            <View style={styles.divisoria} />
+
+                            <CampoPerfil
+                                label={"Órgão expedidor"}
+                                valor={usuario?.orgao_expedidor || "--"}
+                            />
+                            <View style={styles.divisoria} />
+
+                            <CampoPerfil
+                                label={"Nacionalidade"}
+                                valor={usuario?.nacionalidade || "--"}
+                            />
+                            <View style={styles.divisoria} />
+
+                            <CampoPerfil
+                                label={"Estado civil"}
+                                valor={usuario?.estado_civil || "--"}
+                            />
                         </View>
-
-                        <Text style={styles.tituloSecao}>
-                            Dados profissionais
-                        </Text>
-
                     </View>
-
-
-                    <View style={styles.card}>
-
-                        <CampoPerfil
-                            label={"Número da carteira de trabalho"}
-                            valor={"0000000"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Série da carteira de trabalho"}
-                            valor={"0000"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Profissão"}
-                            valor={"Analista"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Áreas de atuação"}
-                            valor={"Tecnologia, Dados e Gestão"}
-                        />
-
-                    </View>
-
                 </View>
 
                 <View style={styles.secao}>
-
                     <View style={styles.tituloSecaoArea}>
-
                         <View style={styles.iconeSecao}>
-
-                            <Ionicons
-                                name="location-outline"
-                                size={22}
-                                color="#0047AB"
-                            />
-
-                        </View>
-
-                        <Text style={styles.tituloSecao}>
-                            Endereço
-                        </Text>
-
-                    </View>
-
-
-                    <View style={styles.card}>
-
-                        <CampoPerfil
-                            label={"CEP"}
-                            valor={"00000-000"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Logradouro"}
-                            valor={"Rua Exemplo"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Número"}
-                            valor={"123"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Complemento"}
-                            valor={"Apartamento 10"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Bairro"}
-                            valor={"Centro"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Cidade"}
-                            valor={"Birigui"}
-                        />
-
-                        <View style={styles.divisoria} />
-
-
-                        <CampoPerfil
-                            label={"Estado"}
-                            valor={"São Paulo"}
-                        />
-
-                    </View>
-
-                </View>
-
-
-                <View style={styles.secao}>
-
-                    <View style={styles.tituloSecaoArea}>
-
-                        <View style={styles.iconeSecao}>
-
                             <Ionicons
                                 name="call-outline"
                                 size={21}
                                 color="#0047AB"
                             />
-
                         </View>
-
-                        <Text style={styles.tituloSecao}>
-                            Contato
-                        </Text>
-
+                        <Text style={styles.tituloSecao}>Contato</Text>
                     </View>
 
-
                     <View style={styles.card}>
-
                         <CampoPerfil
                             label={"Telefone"}
-                            valor={"(00) 00000-0000"}
+                            valor={formatarTelefone(usuario?.telefone)}
                         />
-
                         <View style={styles.divisoria} />
-
 
                         <CampoPerfil
                             label={"Email"}
-                            valor={"email@email.com"}
+                            valor={usuario?.email || "--"}
                         />
-
                     </View>
-
                 </View>
 
-
                 <View style={styles.secao}>
-
                     <View style={styles.tituloSecaoArea}>
-
                         <View style={styles.iconeSecao}>
-
                             <Ionicons
                                 name="shield-checkmark-outline"
                                 size={21}
                                 color="#0047AB"
                             />
-
                         </View>
-
-                        <Text style={styles.tituloSecao}>
-                            Segurança
-                        </Text>
-
+                        <Text style={styles.tituloSecao}>Segurança</Text>
                     </View>
 
-
                     <View style={styles.cardAcoes}>
-
                         <TouchableOpacity
                             style={styles.acao}
                             onPress={() =>
                                 navigation.navigate("RedefinirSenha")
                             }
                         >
-
-
+                            <View style={styles.iconeAcao}>
+                                <Ionicons
+                                    name="lock-closed-outline"
+                                    size={21}
+                                    color="#0047AB"
+                                />
+                            </View>
 
                             <View style={styles.textosAcao}>
-
                                 <Text style={styles.tituloAcao}>
                                     Redefinir senha
                                 </Text>
-
                                 <Text style={styles.descricaoAcao}>
                                     Altere a senha de acesso à sua conta
                                 </Text>
-
                             </View>
-
 
                             <Ionicons
                                 name="chevron-forward-outline"
                                 size={20}
                                 color="#999999"
                             />
-
                         </TouchableOpacity>
-
                     </View>
-
                 </View>
-
             </ScrollView>
-
         </View>
     );
 }
-
-
-
-function CampoPerfil({ label, valor }) {
-
-    return (
-        <View style={styles.campo}>
-
-            <Text style={styles.label}>
-                {label}
-            </Text>
-
-            <Text style={styles.valor}>
-                {valor}
-            </Text>
-
-        </View>
-    );
-}
-
-
 
 const styles = StyleSheet.create({
-
-    container: {
+    container: { flex: 1 },
+    carregandoBox: {
         flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
     },
-
-
     main: {
         paddingVertical: 20,
         paddingHorizontal: 30,
         paddingBottom: 140,
-        gap: 20,
+        gap: 20
     },
-
-
-
     titulo: {
         fontSize: 25,
         fontFamily: "Inter_700Bold",
-        color: "#000000",
+        color: "#000000"
     },
-
     subtitulo: {
         fontSize: 14,
         fontFamily: "Inter_400Regular",
         color: "#666666",
-        marginTop: 3,
+        marginTop: 3
     },
-
-
-
     cardPerfil: {
         width: "100%",
-
         backgroundColor: "#FFFFFF",
-
         borderRadius: 10,
-
         padding: 18,
-
         flexDirection: "row",
         alignItems: "center",
-
         elevation: 3,
-
         shadowColor: "#000000",
         shadowOpacity: 0.08,
         shadowRadius: 5,
-
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 }
     },
-
     areaFoto: {
         position: "relative",
-
-        marginRight: 15,
+        marginRight: 15
     },
-
-    fotoPerfil: {
-        width: 75,
-        height: 75,
-
-        borderRadius: 38,
-    },
-
     fotoPadrao: {
         width: 75,
         height: 75,
-
         borderRadius: 38,
-
         backgroundColor: "#E5F0FF",
-
         alignItems: "center",
         justifyContent: "center",
+        overflow: "hidden"
     },
-
-    botaoFoto: {
-        position: "absolute",
-
-        right: -2,
-        bottom: -2,
-
-        width: 28,
-        height: 28,
-
-        borderRadius: 14,
-
-        backgroundColor: "#0047AB",
-
-        alignItems: "center",
-        justifyContent: "center",
-
-        borderWidth: 2,
-        borderColor: "#FFFFFF",
+    foto: {
+        width: 75,
+        height: 75,
+        borderRadius: 38
     },
-
-    infoPrincipal: {
-        flex: 1,
-    },
-
+    infoPrincipal: { flex: 1 },
     nome: {
         fontSize: 18,
         fontFamily: "Inter_700Bold",
-        color: "#222222",
+        color: "#222222"
     },
-
     emailPrincipal: {
         fontSize: 13,
         fontFamily: "Inter_400Regular",
         color: "#777777",
-
-        marginTop: 4,
+        marginTop: 4
     },
-
-
-
-    secao: {
-        width: "100%",
-        gap: 10,
-    },
-
+    secao: { width: "100%", gap: 10 },
     tituloSecaoArea: {
         flexDirection: "row",
         alignItems: "center",
-
-        gap: 8,
+        gap: 8
     },
-
     iconeSecao: {
         width: 34,
         height: 34,
-
         borderRadius: 8,
-
         backgroundColor: "#E5F0FF",
-
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "center"
     },
-
     tituloSecao: {
         fontSize: 18,
         fontFamily: "Inter_800ExtraBold",
-        color: "#222222",
+        color: "#222222"
     },
-
-
-
     card: {
         width: "100%",
-
         backgroundColor: "#FFFFFF",
-
         borderRadius: 10,
-
         elevation: 2,
-
         shadowColor: "#000000",
         shadowOpacity: 0.06,
         shadowRadius: 4,
-
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 }
     },
-
-
-
-    campo: {
-        width: "100%",
-
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-    },
-
-    label: {
-        fontSize: 12,
-        fontFamily: "Inter_400Regular",
-        color: "#888888",
-
-        marginBottom: 4,
-    },
-
-    valor: {
-        fontSize: 14,
-        fontFamily: "Inter_700Bold",
-        color: "#333333",
-
-        lineHeight: 20,
-    },
-
     divisoria: {
         height: 1,
-
         backgroundColor: "#EEEEEE",
-
-        marginHorizontal: 16,
+        marginHorizontal: 16
     },
-
-
-
     cardAcoes: {
         width: "100%",
-
         backgroundColor: "#FFFFFF",
-
         borderRadius: 10,
-
         elevation: 2,
-
         shadowColor: "#000000",
         shadowOpacity: 0.06,
         shadowRadius: 4,
-
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 }
     },
-
     acao: {
         width: "100%",
-
         minHeight: 70,
-
         flexDirection: "row",
         alignItems: "center",
-
         paddingHorizontal: 15,
-        paddingVertical: 12,
+        paddingVertical: 12
     },
-
     iconeAcao: {
         width: 42,
         height: 42,
-
         borderRadius: 8,
-
         backgroundColor: "#E5F0FF",
-
         alignItems: "center",
         justifyContent: "center",
-
-        marginRight: 12,
+        marginRight: 12
     },
-
-    textosAcao: {
-        flex: 1,
-    },
-
+    textosAcao: { flex: 1 },
     tituloAcao: {
         fontSize: 14,
         fontFamily: "Inter_700Bold",
-        color: "#222222",
+        color: "#222222"
     },
-
     descricaoAcao: {
         fontSize: 12,
         fontFamily: "Inter_400Regular",
         color: "#777777",
-
-        marginTop: 3,
+        marginTop: 3
     },
-
+    gap: { gap: 20 }
 });

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { LinearGradient } from 'expo-linear-gradient';
 
 import {
     View,
@@ -39,14 +38,9 @@ export default function Login({ navigation }) {
     async function entrar() {
         if (carregando) return;
 
-        console.log("CPF/CNPJ:", cpfCnpj);
-        console.log("Senha:", senha);
-
         setCarregando(true);
 
         const resultado = await login(cpfCnpj, senha);
-
-        console.log("[LOGIN] Resultado:", resultado);
 
         setCarregando(false);
 
@@ -63,7 +57,7 @@ export default function Login({ navigation }) {
             return;
         }
 
-        navigation.navigate("Dashboard");
+        navigation.navigate("Principal");
     }
 
     function aoDigitarCpf(texto) {

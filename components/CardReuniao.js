@@ -2,7 +2,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 
-export default function CardReuniao({ dashboard = "", titulo, dia, horario, local, status, acao }) {
+export default function CardReuniao({ dashboard = "", titulo, dia, horario, local, status, acao, id = 0}) {
 
     const Realizada = status === "Realizada";
     const AConfirmar = status === "A confirmar";

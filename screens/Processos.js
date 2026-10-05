@@ -1,128 +1,113 @@
-import React from "react";
-
+import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
     StyleSheet,
     ScrollView,
-    TouchableOpacity
+    ActivityIndicator
 } from "react-native";
-
-import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 import Header from "../components/Header";
 import CardProcesso from "../components/CardProcesso";
+import { buscarProcessos } from "../services/clienteServices";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
+function formatarStatus(status) {
+    const mapa = {
+        'em_andamento': 'Em andamento',
+        'concluido': 'Concluído',
+        'inativo': 'Inativo'
+    };
+    return mapa[(status || '').toLowerCase()] || status || "--";
+}
 
 export default function Processos({ navigation }) {
+    const [processos, setProcessos] = useState([]);
+    const [carregando, setCarregando] = useState(true);
 
-    const processos = [
-        {
-            id: 1,
-            numero: "0000001-00.2026.8.26.0000",
-            advogados: "Dr. Carlos Mendes",
-            tipo: "Ação Trabalhista",
-            status: "Em andamento"
-        },
+    const carregar = useCallback(async () => {
+        setCarregando(true);
 
-        {
-            id: 2,
-            numero: "0000002-00.2026.8.26.0000",
-            advogados: "Dra. Mariana Alves e Dr. Rafael Souza",
-            tipo: "Ação Cível",
-            status: "Em andamento"
-        },
+        const resultado = await buscarProcessos();
 
-        {
-            id: 3,
-            numero: "0000003-00.2025.8.26.0000",
-            advogados: "Dra. Fernanda Oliveira",
-            tipo: "Direito de Família",
-            status: "Concluído"
+        if (resultado.sucesso) {
+            setProcessos(resultado.processos);
         }
-    ];
 
+        setCarregando(false);
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            carregar();
+        }, [carregar])
+    );
+
+    useAutoRefresh(carregar, ["processo", "notificacao"]);
 
     return (
         <View style={styles.container}>
-
             <Header navigation={navigation} />
-
 
             <ScrollView
                 contentContainerStyle={styles.main}
                 showsVerticalScrollIndicator={false}
             >
-
                 <View>
-
-                    <Text style={styles.titulo}>
-                        Processos
-                    </Text>
-
+                    <Text style={styles.titulo}>Processos</Text>
                     <Text style={styles.subtitulo}>
                         Acompanhe seus processos e seus principais detalhes
                     </Text>
-
                 </View>
 
-
-                <View style={styles.lista}>
-
-                    {processos.map((item) => (
-
-                        <CardProcesso
-                            id={item.id}
-                            status={item.status}
-                            numero={item.numero}
-                            advogados={item.advogados}
-                            tipo={item.tipo}
-                        />
-
-                    ))}
-
-                </View>
-
+                {carregando ? (
+                    <ActivityIndicator size="large" color="#0047AB" />
+                ) : processos.length === 0 ? (
+                    <Text style={styles.vazio}>Nenhum processo encontrado.</Text>
+                ) : (
+                    <View style={styles.lista}>
+                        {processos.map((item) => (
+                            <CardProcesso
+                                key={item.id}
+                                status={formatarStatus(item.status)}
+                                numero={item.numero || "--"}
+                                advogados={item.advogado_responsavel || "--"}
+                                tipo={item.tipo_processo || item.area || "--"}
+                            />
+                        ))}
+                    </View>
+                )}
             </ScrollView>
-
         </View>
     );
 }
 
-
-
 const styles = StyleSheet.create({
-
-    container: {
-        flex: 1,
-    },
-
-
+    container: { flex: 1 },
     main: {
         paddingVertical: 20,
         paddingHorizontal: 30,
         paddingBottom: 120,
-        gap: 20,
+        gap: 20
     },
-
-
-
     titulo: {
         fontSize: 25,
         fontFamily: "Inter_700Bold",
-        color: "#000000",
+        color: "#000000"
     },
-
     subtitulo: {
         fontSize: 14,
         fontFamily: "Inter_400Regular",
         color: "#666666",
-        marginTop: 3,
+        marginTop: 3
     },
-
-
-    lista: {
-        width: "100%",
-        gap: 15,
-    },
+    lista: { width: "100%", gap: 15 },
+    vazio: {
+        fontSize: 14,
+        fontFamily: "Inter_400Regular",
+        color: "#888888",
+        textAlign: "center",
+        marginTop: 20
+    }
 });
