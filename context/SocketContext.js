@@ -13,7 +13,7 @@ export function SocketProvider({ children, idUsuario }) {
         if (!idUsuario) return;
 
         const socket = io(API_URL, {
-            transports: ["websocket", "polling"],
+            transports: ["polling"],
             reconnection: true,
             reconnectionAttempts: 20,
             reconnectionDelay: 2000,

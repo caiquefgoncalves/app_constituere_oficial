@@ -16,8 +16,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Speech from "expo-speech";
+import QRCode from "react-qr-code";
 
-import { perguntarVeritas } from "../services/clienteServices";
+import { perguntarVeritas, consultarCobrancaPix } from "../services/clienteServices";
 
 const MENSAGEM_INICIAL = {
     id: 1,
@@ -73,6 +74,14 @@ export default function ChatVeritas({ visivel, onFechar }) {
     const scrollRef = useRef(null);
     const ultimaMensagemLidaRef = useRef(null);
     const primeiraLeituraRef = useRef(true);
+    const consultaPixRef = useRef(null);
+
+    function pararConsultaPix() {
+        if (consultaPixRef.current) {
+            clearInterval(consultaPixRef.current);
+            consultaPixRef.current = null;
+        }
+    }
 
     useEffect(() => {
         async function carregarPreferenciasVoz() {
@@ -106,10 +115,12 @@ export default function ChatVeritas({ visivel, onFechar }) {
     useEffect(() => {
         if (!visivel) {
             Speech.stop();
+            pararConsultaPix();
         }
 
         return () => {
             Speech.stop();
+            pararConsultaPix();
         };
     }, [visivel]);
 
@@ -319,15 +330,28 @@ export default function ChatVeritas({ visivel, onFechar }) {
             const novaMensagem = {
                 id: Date.now(),
                 autor: "veritas",
+                codigoPix: acao.tipo === "gerar_pagamento_pix"
+                    ? dados.codigo_pagamento || null
+                    : null,
                 texto:
-                    dados.mensagem ||
-                    dados.message ||
-                    "Ação concluída com sucesso."
+                    acao.tipo === "gerar_pagamento_pix"
+                        ? `Pix gerado para R$ ${Number(dados.valor || 0).toFixed(2)}. Copie e pague este código no aplicativo do seu banco:\n\n${dados.codigo_pagamento || "Código Pix indisponível."}`
+                        : dados.mensagem ||
+                          dados.message ||
+                          "Ação concluída com sucesso."
             };
 
             const listaFinal = [...listaAtualizada, novaMensagem];
             setMensagens(listaFinal);
             salvarHistorico(listaFinal);
+
+            if (acao.tipo === "gerar_pagamento_pix" && dados.id_cobranca) {
+                iniciarConsultaPix(
+                    dados.id_cobranca,
+                    dados.id_parcela || acao.dados?.id_parcela,
+                    dados.tipo_parcela || acao.dados?.tipo_parcela
+                );
+            }
         } catch (e) {
             const novaMensagem = {
                 id: Date.now(),
@@ -340,6 +364,40 @@ export default function ChatVeritas({ visivel, onFechar }) {
         } finally {
             setExecutandoAcao(false);
         }
+    }
+
+    function iniciarConsultaPix(idCobranca, idParcela, tipoParcela) {
+        pararConsultaPix();
+
+        const consultarPagamento = async () => {
+            try {
+                const resultado = await consultarCobrancaPix(
+                    idCobranca,
+                    idParcela,
+                    tipoParcela
+                );
+
+                if (!resultado.sucesso || !resultado.pago) return;
+
+                pararConsultaPix();
+                const confirmacao = {
+                    id: Date.now(),
+                    autor: "veritas",
+                    texto: "Pagamento concluído! Recebemos e registramos o seu pagamento com sucesso."
+                };
+
+                setMensagens((listaAnterior) => {
+                    const listaFinal = [...listaAnterior, confirmacao];
+                    salvarHistorico(listaFinal);
+                    return listaFinal;
+                });
+            } catch (e) {
+                console.log("[VERITAS] Erro ao consultar Pix:", e);
+            }
+        };
+
+        consultarPagamento();
+        consultaPixRef.current = setInterval(consultarPagamento, 5000);
     }
 
     function alternarVoz() {
@@ -476,6 +534,17 @@ export default function ChatVeritas({ visivel, onFechar }) {
                                                 : "#333333"
                                         )}
                                     </View>
+
+                                    {msg.codigoPix && (
+                                        <View style={styles.areaQrPix}>
+                                            <QRCode
+                                                value={msg.codigoPix}
+                                                size={176}
+                                                bgColor="#FFFFFF"
+                                                fgColor="#000000"
+                                            />
+                                        </View>
+                                    )}
 
                                     {msg.acao && (
                                         <View style={styles.acaoProposta}>
@@ -737,6 +806,15 @@ const styles = StyleSheet.create({
         fontSize: 17,
         lineHeight: 24,
         fontFamily: "Inter_700Bold"
+    },
+    areaQrPix: {
+        marginTop: 14,
+        alignSelf: "center",
+        padding: 10,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#E0E0E0"
     },
     acaoProposta: {
         marginTop: 10,
