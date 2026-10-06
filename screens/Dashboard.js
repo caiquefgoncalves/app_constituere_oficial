@@ -7,7 +7,7 @@ import Header from "../components/Header";
 import CardDashboard from "../components/CardDashboard";
 import CardReuniao from "../components/CardReuniao";
 import CardPagamento from "../components/CardPagamento";
-import { buscarDashboard } from "../services/clienteServices";
+import { buscarDashboard, buscarMeusDados } from "../services/clienteServices";
 import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
 function formatarNome(nomeCompleto) {
@@ -42,10 +42,35 @@ export default function Dashboard({ navigation }) {
 
     const carregar = useCallback(async () => {
         try {
-            const nomeSalvo = await AsyncStorage.getItem("nome");
+            let nomeFinal = null;
 
-            if (nomeSalvo) {
-                setNome(formatarNome(nomeSalvo));
+            try {
+                const meusDados = await buscarMeusDados();
+
+                if (meusDados.sucesso && meusDados.usuario?.nome) {
+                    nomeFinal = meusDados.usuario.nome;
+
+                    try {
+                        await AsyncStorage.setItem("nome", nomeFinal);
+                    } catch (e) {
+                        console.log("[DASHBOARD] Erro ao salvar nome local:", e);
+                    }
+                }
+            } catch (e) {
+                console.log("[DASHBOARD] Erro /meus_dados:", e);
+            }
+
+            if (!nomeFinal) {
+                try {
+                    const nomeSalvo = await AsyncStorage.getItem("nome");
+                    if (nomeSalvo) nomeFinal = nomeSalvo;
+                } catch (e) {
+                    console.log("[DASHBOARD] Erro AsyncStorage:", e);
+                }
+            }
+
+            if (nomeFinal) {
+                setNome(formatarNome(nomeFinal));
             }
 
             const resultado = await buscarDashboard();
@@ -69,7 +94,12 @@ export default function Dashboard({ navigation }) {
         }, [carregar])
     );
 
-    useAutoRefresh(carregar, ["agendamento", "processo", "notificacao"]);
+    useAutoRefresh(carregar, [
+        "agendamento",
+        "processo",
+        "notificacao",
+        "usuario"
+    ]);
 
     if (carregando) {
         return (

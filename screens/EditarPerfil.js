@@ -15,6 +15,7 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Header from "../components/Header";
 import Input from "../components/Input";
@@ -125,10 +126,25 @@ export default function EditarPerfil({ navigation, route }) {
                 setEmail(u.email || "");
                 setTelefone(u.telefone || "");
                 setCpf(u.cpf || "");
+                setCnpj(u.cnpj || "");
                 setRg(u.rg || "");
                 setOrgaoExpedidor(u.orgao_expedidor || "");
                 setNacionalidade(u.nacionalidade || "");
                 setEstadoCivil(u.estado_civil || "");
+                setDataNascimento(u.data_nascimento || "");
+                setSexo(u.sexo || "");
+                setProfissao(u.profissao || "");
+                setCarteiraTrabalho(u.carteira_trabalho || "");
+                setSerieCarteira(u.serie_carteira || "");
+                setRazaoSocial(u.razao_social || "");
+                setNomeFantasia(u.nome_fantasia || "");
+                setCep(u.cep || "");
+                setLogradouro(u.logradouro || "");
+                setNumero(u.numero || "");
+                setComplemento(u.complemento || "");
+                setBairro(u.bairro || "");
+                setCidade(u.cidade || "");
+                setEstado(u.estado || "");
                 setVersaoFoto(Date.now());
             }
 
@@ -248,6 +264,16 @@ export default function EditarPerfil({ navigation, route }) {
         if (!resultado.sucesso) {
             Alert.alert("Erro", resultado.mensagem);
             return;
+        }
+
+        try {
+            const nomeParaSalvar = nome || razaoSocial || "";
+
+            if (nomeParaSalvar) {
+                await AsyncStorage.setItem("nome", nomeParaSalvar);
+            }
+        } catch (e) {
+            console.log("[EDITAR PERFIL] Erro ao salvar nome local:", e);
         }
 
         setVersaoFoto(Date.now());

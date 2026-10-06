@@ -21,30 +21,57 @@ export default function CardReuniao({ dashboard = "", titulo, dia, horario, loca
 
                 <View style={styles.textos}>
                     {dashboard !== "" && <Text style={styles.dashboard}>{dashboard}</Text>}
-                    <Text style={styles.nomeReuniao}>{titulo}</Text>
+                    <Text
+                        style={styles.nomeReuniao}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                    >
+                        {titulo}
+                    </Text>
                 </View>
             </View>
 
             <View style={styles.informacao}>
                 <Ionicons name="calendar-outline" size={21} color="#0757B9" />
-                <Text style={styles.textoInformacao}>{dia}</Text>
+                <Text
+                    style={styles.textoInformacao}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                >
+                    {dia}
+                </Text>
             </View>
 
             <View style={styles.informacao}>
                 <Ionicons name="time-outline" size={21} color="#0757B9" />
-                <Text style={styles.textoInformacao}>{horario}</Text>
+                <Text
+                    style={styles.textoInformacao}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                >
+                    {horario}
+                </Text>
             </View>
 
             <View style={styles.baixo}>
 
-                <View style={styles.informacao}>
+                <View style={styles.informacaoLocal}>
                     <Ionicons name="location-outline" size={22} color="#0757B9" />
-                    <Text style={styles.textoInformacao}>{local}</Text>
+                    <Text
+                        style={styles.textoInformacao}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        {local}
+                    </Text>
                 </View>
 
                 <View style={styles.areaStatus}>
                     <View style={[styles.statusBase, { backgroundColor: fundoStatus, borderColor: corStatus }]}>
-                        <Text style={[styles.textoBase, { color: corStatus }]}>
+                        <Text
+                            style={[styles.textoBase, { color: corStatus }]}
+                            numberOfLines={1}
+                        >
                             {status}
                         </Text>
                     </View>
@@ -79,11 +106,13 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginRight: 12,
+        flexShrink: 0,
     },
     nomeReuniao: {
         fontSize: 20,
         color: "#222222",
         fontFamily: "Inter_700Bold",
+        flexShrink: 1,
     },
     informacao: {
         flexDirection: "row",
@@ -95,10 +124,12 @@ const styles = StyleSheet.create({
         color: "#666666",
         marginLeft: 10,
         fontFamily: "Inter_400Regular",
+        flexShrink: 1,
     },
     areaStatus: {
         marginTop: 4,
         alignItems: "flex-start",
+        flexShrink: 0,
     },
     statusBase: {
         borderRadius: 20,
@@ -115,13 +146,22 @@ const styles = StyleSheet.create({
         fontFamily: "Inter_700Bold",
     },
     textos: {
+        flex: 1,
+        minWidth: 0,
         justifyContent: "space-between",
     },
-
     baixo: {
         width: "100%",
         justifyContent: "space-between",
         flexDirection: "row",
         alignItems: "flex-start",
-    }
+        gap: 10,
+    },
+    informacaoLocal: {
+        flex: 1,
+        minWidth: 0,
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 10,
+    },
 });

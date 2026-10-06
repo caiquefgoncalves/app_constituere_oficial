@@ -15,6 +15,7 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Speech from "expo-speech";
 
 import { perguntarVeritas } from "../services/clienteServices";
 
@@ -22,12 +23,12 @@ const MENSAGEM_INICIAL = {
     id: 1,
     autor: "veritas",
     texto:
-        "Olá! Sou a Veritas.AI. Posso ajudar com perguntas jurídicas e com estes serviços:\n\n" +
-        "1. Consultar, criar, editar, confirmar, recusar e desmarcar agendamentos.\n" +
-        "2. Localizar clientes e advogados parceiros por nome, CPF, CNPJ ou e-mail.\n" +
-        "3. Listar seus clientes e advogados parceiros.\n" +
-        "4. Consultar processos e cadastrar atualizações.\n" +
-        "5. Preparar o download do relatório em PDF de um processo.\n\n" +
+        "Olá! Sou a Veritas.AI, sua assistente jurídica. Posso ajudar você a:\n\n" +
+        "1. Tirar dúvidas jurídicas gerais.\n" +
+        "2. Consultar seus débitos, parcelas em aberto e vencimentos.\n" +
+        "3. Buscar advogados do seu escritório por área de atuação.\n" +
+        "4. Solicitar uma reunião com um advogado.\n" +
+        "5. Alterar seus próprios dados cadastrais.\n\n" +
         "Como posso ajudar?"
 };
 
@@ -66,7 +67,81 @@ export default function ChatVeritas({ visivel, onFechar }) {
     const [digitando, setDigitando] = useState(false);
     const [executandoAcao, setExecutandoAcao] = useState(false);
 
+    const [vozAtivada, setVozAtivada] = useState(true);
+    const [velocidadeVoz, setVelocidadeVoz] = useState(1.15);
+
     const scrollRef = useRef(null);
+    const ultimaMensagemLidaRef = useRef(null);
+    const primeiraLeituraRef = useRef(true);
+
+    useEffect(() => {
+        async function carregarPreferenciasVoz() {
+            try {
+                const vozSalva = await AsyncStorage.getItem("veritas_voz_ativada");
+                const velocidadeSalva = await AsyncStorage.getItem("veritas_velocidade_voz");
+
+                if (vozSalva !== null) {
+                    setVozAtivada(vozSalva === "true");
+                }
+
+                if (velocidadeSalva !== null) {
+                    setVelocidadeVoz(Number(velocidadeSalva) || 1.15);
+                }
+            } catch (e) {
+                console.log("[VERITAS] Erro ao carregar preferências de voz:", e);
+            }
+        }
+
+        carregarPreferenciasVoz();
+    }, []);
+
+    useEffect(() => {
+        AsyncStorage.setItem("veritas_voz_ativada", String(vozAtivada));
+    }, [vozAtivada]);
+
+    useEffect(() => {
+        AsyncStorage.setItem("veritas_velocidade_voz", String(velocidadeVoz));
+    }, [velocidadeVoz]);
+
+    useEffect(() => {
+        if (!visivel) {
+            Speech.stop();
+        }
+
+        return () => {
+            Speech.stop();
+        };
+    }, [visivel]);
+
+    useEffect(() => {
+        const ultima = mensagens[mensagens.length - 1];
+
+        if (primeiraLeituraRef.current) {
+            primeiraLeituraRef.current = false;
+            ultimaMensagemLidaRef.current = ultima?.id;
+            return;
+        }
+
+        if (!vozAtivada) return;
+        if (!ultima || ultima.autor !== "veritas") return;
+        if (ultima.id === ultimaMensagemLidaRef.current) return;
+        if (!ultima.texto || ultima.texto.length < 2) return;
+
+        ultimaMensagemLidaRef.current = ultima.id;
+
+        const textoLimpo = ultima.texto
+            .replace(/\*\*/g, "")
+            .replace(/\n+/g, ". ")
+            .trim();
+
+        Speech.stop();
+
+        Speech.speak(textoLimpo, {
+            language: "pt-BR",
+            rate: velocidadeVoz,
+            pitch: 1.12
+        });
+    }, [mensagens, vozAtivada, velocidadeVoz]);
 
     useEffect(() => {
         if (visivel) {
@@ -128,6 +203,8 @@ export default function ChatVeritas({ visivel, onFechar }) {
     }
 
     async function apagarHistorico() {
+        Speech.stop();
+
         try {
             const idUsuario = await AsyncStorage.getItem("id_usuario");
 
@@ -137,6 +214,7 @@ export default function ChatVeritas({ visivel, onFechar }) {
         } catch {}
 
         setMensagens([MENSAGEM_INICIAL]);
+        ultimaMensagemLidaRef.current = null;
     }
 
     async function enviar() {
@@ -264,6 +342,22 @@ export default function ChatVeritas({ visivel, onFechar }) {
         }
     }
 
+    function alternarVoz() {
+        const novoEstado = !vozAtivada;
+        setVozAtivada(novoEstado);
+
+        if (!novoEstado) {
+            Speech.stop();
+        }
+    }
+
+    function alternarVelocidade() {
+        const opcoes = [0.9, 1, 1.15, 1.3, 1.5, 1.75, 2];
+        const indiceAtual = opcoes.findIndex((v) => Math.abs(v - velocidadeVoz) < 0.01);
+        const proximoIndice = (indiceAtual + 1) % opcoes.length;
+        setVelocidadeVoz(opcoes[proximoIndice]);
+    }
+
     return (
         <Modal
             visible={visivel}
@@ -295,6 +389,31 @@ export default function ChatVeritas({ visivel, onFechar }) {
                         </View>
 
                         <View style={styles.acoesCabecalho}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.botaoVoz,
+                                    vozAtivada && styles.botaoVozAtiva
+                                ]}
+                                onPress={alternarVoz}
+                            >
+                                <Ionicons
+                                    name={vozAtivada ? "volume-high" : "volume-mute"}
+                                    size={18}
+                                    color="#2b2200"
+                                />
+                            </TouchableOpacity>
+
+                            {vozAtivada && (
+                                <TouchableOpacity
+                                    style={styles.botaoVelocidade}
+                                    onPress={alternarVelocidade}
+                                >
+                                    <Text style={styles.textoVelocidade}>
+                                        {velocidadeVoz}x
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+
                             <TouchableOpacity
                                 style={styles.botaoLimpar}
                                 onPress={apagarHistorico}
@@ -519,10 +638,34 @@ const styles = StyleSheet.create({
     acoesCabecalho: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8
+        gap: 6
+    },
+    botaoVoz: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: "rgba(0, 0, 0, 0.12)",
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    botaoVozAtiva: {
+        backgroundColor: "rgba(255, 255, 255, 0.5)"
+    },
+    botaoVelocidade: {
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        borderRadius: 7,
+        backgroundColor: "rgba(255, 255, 255, 0.5)",
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    textoVelocidade: {
+        fontSize: 12,
+        fontFamily: "Inter_700Bold",
+        color: "#2b2200"
     },
     botaoLimpar: {
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 7,
         borderWidth: 1,
@@ -530,14 +673,14 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255, 255, 255, 0.45)"
     },
     textoLimpar: {
-        fontSize: 14,
+        fontSize: 13,
         fontFamily: "Inter_700Bold",
         color: "#2b2200"
     },
     botaoFechar: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         backgroundColor: "rgba(0, 0, 0, 0.12)",
         alignItems: "center",
         justifyContent: "center"
