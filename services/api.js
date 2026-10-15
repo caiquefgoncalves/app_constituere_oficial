@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://10.92.11.13:5000';
+const API_URL = 'http://192.168.0.134:5000';
 
 export async function requisicao(caminho, opcoes = {}) {
     const url = `${API_URL}${caminho}`;

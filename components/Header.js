@@ -72,6 +72,18 @@ export default function Header({ navigation }) {
         }
     }
 
+    function abrirChat() {
+        if (!navigation) return;
+
+        const parent = navigation.getParent();
+
+        if (parent) {
+            parent.navigate("Chat");
+        } else {
+            navigation.navigate("Chat");
+        }
+    }
+
     const sair = async () => {
         await AsyncStorage.removeItem("token");
         await AsyncStorage.removeItem("nome");
@@ -103,6 +115,17 @@ export default function Header({ navigation }) {
                                 source={require("../assets/veritas.png")}
                                 style={styles.imagemVeritas}
                                 resizeMode="cover"
+                            />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.botaoNotificacao}
+                            onPress={abrirChat}
+                        >
+                            <Ionicons
+                                name="chatbubble-outline"
+                                size={32}
+                                color="white"
                             />
                         </TouchableOpacity>
 

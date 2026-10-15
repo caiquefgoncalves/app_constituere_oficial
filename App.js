@@ -50,6 +50,7 @@ import EditarPerfil from "./screens/EditarPerfil";
 import RedefinirSenha from "./screens/RedefinirSenha";
 
 import Notificacoes from "./screens/Notificacoes";
+import Chat from "./screens/Chat";
 
 import iconeHomeAtivo from "./assets/iconeHomeAtivo.png";
 import iconeHomeInativo from "./assets/iconeHomeInativo.png";
@@ -350,6 +351,10 @@ export default function App() {
                     <Stack.Screen
                         name="Notificacoes"
                         component={Notificacoes}
+                    />
+                    <Stack.Screen
+                        name="Chat"
+                        component={Chat}
                     />
                 </Stack.Navigator>
             </NavigationContainer>
