@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
-import { requisicaoAutenticada, API_URL, ORIGEM_DISPOSITIVO } from './api';
+import * as Sharing from 'expo-sharing';
+import { requisicaoAutenticada, API_URL } from './api';
 
 export async function buscarDashboard() {
     const { ok, dados } = await requisicaoAutenticada('/cliente/dashboard');
@@ -137,9 +138,7 @@ export async function editarPerfilCliente(campos, fotoUri) {
                     mimeType: 'image/jpeg',
                     parameters: camposString,
                     headers: {
-                        'X-Access-Token': token,
-                        'X-Client-Platform': 'expo-mobile',
-                        'X-Client-Device': ORIGEM_DISPOSITIVO
+                        'X-Access-Token': token
                     }
                 }
             );
@@ -187,6 +186,216 @@ export async function editarPerfilCliente(campos, fotoUri) {
     }
 }
 
+export async function criarCobrancaBoleto(idParcela, tipoParcela) {
+    const { ok, dados } = await requisicaoAutenticada(
+        '/cliente/pagamento/boleto',
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                id_parcela: idParcela,
+                tipo_parcela: tipoParcela || 'prolabore'
+            })
+        }
+    );
+
+    console.log(">>> [CRIAR BOLETO] ok:", ok);
+    console.log(">>> [CRIAR BOLETO] dados:", JSON.stringify(dados, null, 2));
+
+    if (!ok) {
+        return {
+            sucesso: false,
+            mensagem: dados.error || 'Erro ao gerar boleto.'
+        };
+    }
+
+    return {
+        sucesso: true,
+        id_cobranca: dados.id_cobranca,
+        codigo_pagamento: dados.codigo_pagamento,
+        valor: dados.valor,
+        id_pagador: dados.id_pagador,
+        id_recebedor: dados.id_recebedor,
+        data_vencimento: dados.data_vencimento,
+        url_pdf: dados.url_pdf
+
+    };
+}
+
+export async function consultarCobrancaBoleto(
+    idCobranca,
+    idParcela,
+    tipoParcela
+) {
+    const params = new URLSearchParams();
+
+    params.append('id_parcela', String(idParcela));
+    params.append('tipo_parcela', tipoParcela || 'prolabore');
+
+    const { ok, dados } = await requisicaoAutenticada(
+        `/cliente/pagamento/boleto/${idCobranca}?${params.toString()}`
+    );
+
+    if (!ok) {
+        return {
+            sucesso: false,
+            mensagem: dados.error || 'Erro ao consultar boleto.'
+        };
+    }
+
+    return {
+        sucesso: true,
+        pago: dados.pago,
+        status: dados.status,
+        valor: dados.valor
+    };
+}
+
+export async function abrirPdfBoleto(
+    idCobranca,
+    idParcela,
+    tipoParcela
+) {
+    try {
+        console.log('[BOLETO PDF] Iniciando...');
+
+        const token = await AsyncStorage.getItem('token');
+
+        if (!token) {
+            console.log('[BOLETO PDF] Token não encontrado');
+
+            return {
+                sucesso: false,
+                mensagem: 'Sessão expirada.'
+            };
+        }
+
+        const params = new URLSearchParams({
+            id_parcela: String(idParcela),
+            tipo_parcela: tipoParcela || 'prolabore'
+        });
+
+        const url = `${API_URL}/cliente/pagamento/boleto/${idCobranca}/pdf?${params.toString()}`;
+
+        console.log('[BOLETO PDF] URL:', url);
+        console.log('[BOLETO PDF] Token presente:', !!token);
+
+        const caminho = `${FileSystem.cacheDirectory}boleto_${idCobranca}.pdf`;
+
+        console.log('[BOLETO PDF] Caminho:', caminho);
+        console.log('[BOLETO PDF] Iniciando download...');
+
+        const resultado = await FileSystem.downloadAsync(
+            url,
+            caminho,
+            {
+                headers: {
+                    'X-Access-Token': token
+                }
+            }
+        );
+
+        console.log('[BOLETO PDF] Download concluído');
+        console.log('[BOLETO PDF] Status:', resultado.status);
+        console.log('[BOLETO PDF] URI:', resultado.uri);
+
+        if (resultado.status !== 200) {
+            return {
+                sucesso: false,
+                mensagem: `Erro ao baixar boleto (${resultado.status}).`
+            };
+        }
+
+        const arquivo = await FileSystem.getInfoAsync(resultado.uri);
+
+        console.log('[BOLETO PDF] Arquivo:', arquivo);
+
+        if (!arquivo.exists || !arquivo.size) {
+            return {
+                sucesso: false,
+                mensagem: 'O PDF não foi baixado corretamente.'
+            };
+        }
+
+        const disponivel = await Sharing.isAvailableAsync();
+
+        console.log('[BOLETO PDF] Sharing disponível:', disponivel);
+
+        if (!disponivel) {
+            return {
+                sucesso: false,
+                mensagem: 'Não é possível abrir o PDF neste dispositivo.'
+            };
+        }
+
+        console.log('[BOLETO PDF] Abrindo compartilhamento...');
+
+        await Sharing.shareAsync(resultado.uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Boleto Constituere',
+            UTI: 'com.adobe.pdf'
+        });
+
+        console.log('[BOLETO PDF] Compartilhamento aberto');
+
+        return { sucesso: true };
+
+    } catch (error) {
+        console.log('[BOLETO PDF] ERRO:', error);
+        console.log('[BOLETO PDF] Mensagem:', error?.message);
+
+        return {
+            sucesso: false,
+            mensagem: error?.message || 'Erro ao abrir boleto.'
+        };
+    }
+}
+
+export async function pagarComCartao(payload) {
+    try {
+        const { ok, dados } = await requisicaoAutenticada(
+            '/cliente/pagamento/cartao',
+            {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if (!ok) {
+            return {
+                sucesso: false,
+                aprovado: dados?.aprovado === true,
+                mensagem: dados?.error || 'Erro ao processar pagamento.',
+                verificar_antes_de_repetir:
+                    dados?.verificar_antes_de_repetir === true,
+                id_compra: dados?.id_compra
+            };
+        }
+
+        return {
+            sucesso: true,
+            aprovado: dados.aprovado === true,
+            mensagem: dados.mensagem,
+            id_compra: dados.id_compra,
+            id_movimentacao: dados.id_movimentacao,
+            valor: dados.valor,
+            valor_recebido: dados.valor_recebido,
+            taxa: dados.taxa,
+            tipo: dados.tipo,
+            parcelas: dados.parcelas,
+            final_cartao: dados.final_cartao
+        };
+
+    } catch (error) {
+        console.log('[CARTAO] Falha na requisição');
+
+        return {
+            sucesso: false,
+            mensagem: 'Não foi possível verificar o resultado do pagamento. Confira antes de tentar novamente.',
+            verificar_antes_de_repetir: true
+        };
+    }
+}
+
 export async function criarCobrancaPix(idParcela, tipoParcela) {
     const { ok, dados } = await requisicaoAutenticada(
         '/cliente/pagamento/pix',
@@ -217,6 +426,7 @@ export async function criarCobrancaPix(idParcela, tipoParcela) {
         valor: dados.valor
     };
 }
+
 
 export async function consultarCobrancaPix(idCobranca, idParcela, tipoParcela) {
     const params = new URLSearchParams();
