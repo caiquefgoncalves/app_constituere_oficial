@@ -23,7 +23,11 @@ import Carregando from "../components/Carregando";
 
 import {
     criarCobrancaPix,
-    consultarCobrancaPix
+    consultarCobrancaPix,
+    criarCobrancaBoleto,
+    consultarCobrancaBoleto,
+    abrirPdfBoleto,
+    pagarComCartao
 } from "../services/clienteServices";
 
 function formatarDinheiro(valor) {
@@ -31,6 +35,16 @@ function formatarDinheiro(valor) {
         style: "currency",
         currency: "BRL"
     });
+}
+
+function formatarValidade(texto) {
+    const numeros = texto.replace(/\D/g, '').slice(0, 6);
+
+    if (numeros.length <= 2) {
+        return numeros;
+    }
+
+    return numeros.slice(0, 2) + '/' + numeros.slice(2);
 }
 
 export default function RealizarPagamento({ navigation, route }) {
@@ -42,10 +56,16 @@ export default function RealizarPagamento({ navigation, route }) {
     const [nomeCartao, setNomeCartao] = useState("");
     const [validade, setValidade] = useState("");
     const [cvv, setCvv] = useState("");
+    const [parcelasCartao, setParcelasCartao] = useState(1);
+    const [pagandoCartao, setPagandoCartao] = useState(false);
+    const [cartaoBloqueado, setCartaoBloqueado] = useState(false);
 
     const [gerandoPix, setGerandoPix] = useState(false);
     const [pixGerado, setPixGerado] = useState(null);
+    const [gerandoBoleto, setGerandoBoleto] = useState(false);
+    const [boletoGerado, setBoletoGerado] = useState(null);
     const [pago, setPago] = useState(false);
+
 
     const intervalRef = useRef(null);
 
@@ -94,28 +114,43 @@ export default function RealizarPagamento({ navigation, route }) {
         iniciarConsulta(resultado.id_cobranca);
     }
 
-    function iniciarConsulta(idCobranca) {
+    function iniciarConsulta(idCobranca, forma = "pix") {
         pararConsulta();
 
         intervalRef.current = setInterval(async () => {
-            const resultado = await consultarCobrancaPix(
-                idCobranca,
-                pagamento.id,
-                fatura.tipo
-            );
+            let resultado;
 
-            if (resultado.sucesso && resultado.pago) {
+            if (forma === "pix") {
+                resultado = await consultarCobrancaPix(
+                    idCobranca,
+                    pagamento.id,
+                    fatura.tipo
+                );
+            } else if (forma === "boleto") {
+                resultado = await consultarCobrancaBoleto(
+                    idCobranca,
+                    pagamento.id,
+                    fatura.tipo
+                );
+            }
+
+            if (resultado?.sucesso && resultado.pago) {
                 pararConsulta();
                 setPago(true);
 
                 Alert.alert(
                     "Pagamento confirmado",
                     "Seu pagamento foi recebido com sucesso!",
-                    [{ text: "OK", onPress: () => navigation.goBack() }]
+                    [{
+                        text: "OK",
+                        onPress: () => navigation.goBack()
+                    }]
                 );
             }
         }, 5000);
     }
+
+    
 
     async function copiarCodigoPix() {
         if (!pixGerado?.codigo_pagamento) return;
@@ -128,6 +163,43 @@ export default function RealizarPagamento({ navigation, route }) {
         }
     }
 
+    async function copiarCodigoBoleto() {
+        if (!boletoGerado?.codigo_pagamento) return;
+
+        try {
+            await Clipboard.setStringAsync(
+                boletoGerado.codigo_pagamento
+            );
+
+            Alert.alert(
+                "Boleto",
+                "Código copiado para a área de transferência."
+            );
+
+        } catch (error) {
+            Alert.alert(
+                "Erro",
+                "Não foi possível copiar o código."
+            );
+        }
+    }
+
+    async function visualizarBoleto() {
+        if (!boletoGerado?.id_cobranca) return;
+
+        const resultado = await abrirPdfBoleto(
+            boletoGerado.id_cobranca,
+            pagamento.id,
+            fatura.tipo
+        );
+
+        if (!resultado.sucesso) {
+            Alert.alert('Erro', resultado.mensagem);
+        }
+    }
+
+
+
     function pagar() {
         Alert.alert(
             "Pagamento registrado",
@@ -136,23 +208,153 @@ export default function RealizarPagamento({ navigation, route }) {
         );
     }
 
-    function gerarBoleto() {
-        Alert.alert(
-            "Boleto gerado",
-            "O boleto foi enviado para o seu e-mail.",
-            [{ text: "OK" }]
-        );
+    async function pagarCartao() {
+        if (pagandoCartao || cartaoBloqueado || pago) return;
+
+        if (!pagamento?.id) {
+            Alert.alert('Erro', 'Pagamento não identificado.');
+            return;
+        }
+
+        const numeroLimpo = numeroCartao.replace(/\D/g, '');
+        const cvvLimpo = cvv.replace(/\D/g, '');
+
+        if (numeroLimpo.length !== 16) {
+            Alert.alert('Erro', 'Informe os 16 dígitos do cartão.');
+            return;
+        }
+
+        if (!/^(0[1-9]|1[0-2])\/\d{4}$/.test(validade)) {
+            Alert.alert('Erro', 'Informe a validade no formato MM/AAAA.');
+            return;
+        }
+
+        if (cvvLimpo.length !== 3) {
+            Alert.alert('Erro', 'O CVV deve conter 3 dígitos.');
+            return;
+        }
+
+        setPagandoCartao(true);
+
+        try {
+            const resultado = await pagarComCartao({
+                id_parcela: pagamento.id,
+                tipo_parcela: fatura.tipo,
+                numero_cartao: numeroLimpo,
+                validade: validade,
+                cvv: cvvLimpo,
+                tipo: formaPagamento === 'credito' ? 'CREDITO' : 'DEBITO',
+                parcelas: formaPagamento === 'credito' ? parcelasCartao : 1
+            });
+
+            if (!resultado.sucesso) {
+                if (resultado.verificar_antes_de_repetir) {
+                    setCartaoBloqueado(true);
+                }
+
+                Alert.alert(
+                    resultado.aprovado
+                        ? 'Pagamento aprovado'
+                        : 'Não foi possível concluir',
+                    resultado.mensagem
+                );
+
+                return;
+            }
+
+            if (!resultado.aprovado) {
+                Alert.alert(
+                    'Pagamento não aprovado',
+                    resultado.mensagem || 'Verifique os dados do cartão.'
+                );
+                return;
+            }
+
+            setPago(true);
+            setNumeroCartao('');
+            setValidade('');
+
+            Alert.alert(
+                'Pagamento confirmado',
+                'Seu pagamento foi realizado com sucesso!',
+                [{
+                    text: 'OK',
+                    onPress: () => navigation.goBack()
+                }]
+            );
+
+        } catch (error) {
+            setCartaoBloqueado(true);
+
+            Alert.alert(
+                'Erro',
+                'Não foi possível verificar o resultado da transação. Confira o pagamento antes de tentar novamente.'
+            );
+
+        } finally {
+            setCvv('');
+            setPagandoCartao(false);
+        }
+    }
+
+    async function gerarBoleto() {
+        if (!pagamento?.id) {
+            Alert.alert("Erro", "Pagamento não identificado.");
+            return;
+        }
+
+        if (gerandoBoleto || boletoGerado) return;
+
+        setGerandoBoleto(true);
+
+
+
+        try {
+            const resultado = await criarCobrancaBoleto(
+                pagamento.id,
+                fatura.tipo
+            );
+
+            if (!resultado.sucesso) {
+                Alert.alert("Erro", resultado.mensagem);
+                return;
+            }
+
+            setBoletoGerado(resultado);
+            setPago(false);
+
+            iniciarConsulta(resultado.id_cobranca, "boleto");
+
+        } catch (error) {
+            console.log("[BOLETO] Erro:", error);
+
+            Alert.alert(
+                "Erro",
+                "Não foi possível gerar o boleto."
+            );
+        } finally {
+            setGerandoBoleto(false);
+        }
     }
 
     function selecionarForma(forma) {
-        if (pixGerado && forma !== "pix") {
+        if (pixGerado && forma !== 'pix') {
             Alert.alert(
-                "Atenção",
-                "Você já gerou uma cobrança Pix. Conclua ou aguarde o pagamento antes de trocar a forma."
+                'Atenção',
+                'Você já gerou uma cobrança Pix.'
             );
             return;
         }
 
+        if (boletoGerado && forma !== 'boleto') {
+            Alert.alert(
+                'Atenção',
+                'Você já gerou um boleto. Conclua o pagamento antes de trocar a forma.'
+            );
+            return;
+        }
+
+        pararConsulta();
         setFormaPagamento(forma);
     }
 
@@ -445,22 +647,126 @@ export default function RealizarPagamento({ navigation, route }) {
                             </Text>
 
                             <View style={styles.cardPagamento}>
-                                <View style={styles.iconePagamentoGrande}>
-                                    <Ionicons
-                                        name="barcode-outline"
-                                        size={85}
-                                        color="#0047AB"
-                                    />
-                                </View>
 
-                                <Text style={styles.tituloPagamento}>
-                                    Gere seu boleto
-                                </Text>
+                                {!boletoGerado && (
+                                    <>
+                                        <View style={styles.iconePagamentoGrande}>
+                                            <Ionicons
+                                                name="barcode-outline"
+                                                size={85}
+                                                color="#0047AB"
+                                            />
+                                        </View>
 
-                                <Text style={styles.instrucao}>
-                                    Ao selecionar essa opção, o boleto será gerado e
-                                    você poderá pagar pela sua conta bancária
-                                </Text>
+                                        <Text style={styles.tituloPagamento}>
+                                            Gere seu boleto
+                                        </Text>
+
+                                        <Text style={styles.instrucao}>
+                                            Toque no botão abaixo para gerar
+                                            seu boleto e realizar o pagamento
+                                            pela sua conta Arkhé.
+                                        </Text>
+                                    </>
+                                )}
+
+                                {boletoGerado && !pago && (
+                                    <>
+                                        <View style={styles.areaQrCode}>
+                                            <Ionicons
+                                                name="document-text-outline"
+                                                size={80}
+                                                color="#0047AB"
+                                            />
+                                        </View>
+
+                                        <Text style={styles.tituloPagamento}>
+                                            Boleto gerado!
+                                        </Text>
+
+                                        <Text style={styles.instrucao}>
+                                            Copie o código abaixo para realizar
+                                            o pagamento pela Arkhé.
+                                        </Text>
+
+                                        <View style={styles.areaChave}>
+                                            <Text style={styles.labelChave}>
+                                                Código do boleto
+                                            </Text>
+
+                                            <Text
+                                                style={styles.chave}
+                                                selectable
+                                            >
+                                                {boletoGerado.codigo_pagamento || "—"}
+                                            </Text>
+                                        </View>
+
+                                        <TouchableOpacity
+                                            style={styles.botaoSecundario}
+                                            onPress={copiarCodigoBoleto}
+                                            disabled={!boletoGerado.codigo_pagamento}
+                                        >
+                                            <Ionicons
+                                                name="copy-outline"
+                                                size={18}
+                                                color="#0047AB"
+                                            />
+
+                                            <Text style={styles.textoBotaoSecundario}>
+                                                Copiar código do boleto
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={styles.botaoSecundario}
+                                            onPress={visualizarBoleto}
+                                        >
+                                            <Ionicons
+                                                name="document-text-outline"
+                                                size={18}
+                                                color="#0047AB"
+                                            />
+
+                                            <Text style={styles.textoBotaoSecundario}>
+                                                Abrir PDF do boleto
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        <View style={styles.aguardandoBox}>
+                                            <Ionicons
+                                                name="time-outline"
+                                                size={19}
+                                                color="#0047AB"
+                                            />
+
+                                            <Text style={styles.textoAguardando}>
+                                                Aguardando confirmação do pagamento...
+                                            </Text>
+                                        </View>
+                                    </>
+                                )}
+
+                                {boletoGerado && pago && (
+                                    <>
+                                        <View style={styles.areaSucesso}>
+                                            <Ionicons
+                                                name="checkmark-circle"
+                                                size={90}
+                                                color="#59A83B"
+                                            />
+                                        </View>
+
+                                        <Text style={styles.tituloSucesso}>
+                                            Pagamento confirmado!
+                                        </Text>
+
+                                        <Text style={styles.instrucao}>
+                                            Seu pagamento foi recebido com sucesso!
+                                        </Text>
+                                    </>
+                                )}
+
                             </View>
                         </View>
                     )}
@@ -468,9 +774,17 @@ export default function RealizarPagamento({ navigation, route }) {
                     {(formaPagamento === "debito" ||
                         formaPagamento === "credito") && (
                         <View style={styles.secao}>
-                            <Text style={styles.tituloSecao}>Dados do cartão</Text>
+                            <Text style={styles.tituloSecao}>
+                                Dados do cartão
+                            </Text>
 
                             <View style={styles.cardPagamento}>
+
+                                <Text style={styles.instrucao}>
+                                    Utilize seu cartão virtual Arkhé
+                                    para realizar o pagamento.
+                                </Text>
+
                                 <Input
                                     label={"Número do cartão"}
                                     valor={numeroCartao}
@@ -490,7 +804,9 @@ export default function RealizarPagamento({ navigation, route }) {
                                         <Input
                                             label={"Validade"}
                                             valor={validade}
-                                            setValor={setValidade}
+                                            setValor={(texto) =>
+                                                setValidade(formatarValidade(texto))
+                                            }
                                             tipo={"numeric"}
                                         />
                                     </View>
@@ -504,6 +820,63 @@ export default function RealizarPagamento({ navigation, route }) {
                                         />
                                     </View>
                                 </View>
+
+                                {formaPagamento === "credito" && (
+                                    <View style={styles.areaParcelamento}>
+
+                                        <Text style={styles.labelParcelamento}>
+                                            Quantidade de parcelas
+                                        </Text>
+
+                                        <View style={styles.controleParcelas}>
+
+                                            <TouchableOpacity
+                                                style={styles.botaoParcela}
+                                                onPress={() =>
+                                                    setParcelasCartao(
+                                                        Math.max(1, parcelasCartao - 1)
+                                                    )
+                                                }
+                                                disabled={parcelasCartao === 1}
+                                            >
+                                                <Ionicons
+                                                    name="remove"
+                                                    size={22}
+                                                    color="#0047AB"
+                                                />
+                                            </TouchableOpacity>
+
+                                            <Text style={styles.numeroParcelas}>
+                                                {parcelasCartao}x
+                                            </Text>
+
+                                            <TouchableOpacity
+                                                style={styles.botaoParcela}
+                                                onPress={() =>
+                                                    setParcelasCartao(
+                                                        Math.min(15, parcelasCartao + 1)
+                                                    )
+                                                }
+                                                disabled={parcelasCartao === 15}
+                                            >
+                                                <Ionicons
+                                                    name="add"
+                                                    size={22}
+                                                    color="#0047AB"
+                                                />
+                                            </TouchableOpacity>
+                                        </View>
+
+                                        <Text style={styles.instrucao}>
+                                            {parcelasCartao}x de aproximadamente{" "}
+                                            {formatarDinheiro(
+                                                fatura.valorNumerico / parcelasCartao
+                                            )}
+                                        </Text>
+
+                                    </View>
+                                )}
+
                             </View>
                         </View>
                     )}
@@ -527,7 +900,7 @@ export default function RealizarPagamento({ navigation, route }) {
                         />
                     )}
 
-                    {formaPagamento === "boleto" && (
+                    {formaPagamento === "boleto" && !boletoGerado && (
                         <Botao
                             texto={"Gerar boleto"}
                             acao={gerarBoleto}
@@ -535,10 +908,10 @@ export default function RealizarPagamento({ navigation, route }) {
                     )}
 
                     {(formaPagamento === "debito" ||
-                        formaPagamento === "credito") && (
+                        formaPagamento === "credito") && !pago && !cartaoBloqueado && (
                         <Botao
                             texto={"Pagar agora"}
-                            acao={pagar}
+                            acao={pagarCartao}
                         />
                     )}
                 </ScrollView>
@@ -547,6 +920,16 @@ export default function RealizarPagamento({ navigation, route }) {
             <Carregando
                 carregando={gerandoPix}
                 texto={"Gerando cobrança Pix..."}
+            />
+
+            <Carregando
+                carregando={gerandoBoleto}
+                texto={"Gerando boleto..."}
+            />
+
+            <Carregando
+                carregando={pagandoCartao}
+                texto={"Processando pagamento..."}
             />
         </View>
     );
@@ -676,10 +1059,9 @@ const styles = StyleSheet.create({
     areaQrCode: {
         alignItems: "center",
         justifyContent: "center",
-        padding: 16,
+        padding: 10,
         backgroundColor: "#FFFFFF",
         borderRadius: 10,
-        minHeight: 220
     },
     areaSucesso: {
         alignItems: "center",
@@ -769,5 +1151,43 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontFamily: "Inter_400Regular",
         color: "#0047AB"
+    },
+
+    areaParcelamento: {
+        width: "100%",
+        gap: 12,
+        marginTop: 6
+    },
+
+    labelParcelamento: {
+        fontSize: 13,
+        fontFamily: "Inter_700Bold",
+        color: "#222222"
+    },
+
+    controleParcelas: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 20
+    },
+
+    botaoParcela: {
+        width: 42,
+        height: 42,
+        borderWidth: 1,
+        borderColor: "#0047AB",
+        borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#FFFFFF"
+    },
+
+    numeroParcelas: {
+        fontSize: 18,
+        fontFamily: "Inter_700Bold",
+        color: "#222222",
+        minWidth: 45,
+        textAlign: "center"
     }
 });
