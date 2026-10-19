@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
-import { requisicaoAutenticada, API_URL } from './api';
+import { requisicaoAutenticada, API_URL, ORIGEM_DISPOSITIVO } from './api';
 
 export async function buscarDashboard() {
     const { ok, dados } = await requisicaoAutenticada('/cliente/dashboard');
@@ -137,7 +137,9 @@ export async function editarPerfilCliente(campos, fotoUri) {
                     mimeType: 'image/jpeg',
                     parameters: camposString,
                     headers: {
-                        'X-Access-Token': token
+                        'X-Access-Token': token,
+                        'X-Client-Platform': 'expo-mobile',
+                        'X-Client-Device': ORIGEM_DISPOSITIVO
                     }
                 }
             );

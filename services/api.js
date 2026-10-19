@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
 
-const API_URL = 'http://10.92.11.28:5000';
+const API_URL = 'http://10.217.244.222:5000';
+const ORIGEM_DISPOSITIVO = Device.deviceName || Device.modelName || 'Celular (Expo)';
 
 export async function requisicao(caminho, opcoes = {}) {
     const url = `${API_URL}${caminho}`;
@@ -10,6 +12,8 @@ export async function requisicao(caminho, opcoes = {}) {
         credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
+            'X-Client-Platform': 'expo-mobile',
+            'X-Client-Device': ORIGEM_DISPOSITIVO,
             ...(opcoes.headers || {})
         }
     });
@@ -37,4 +41,4 @@ export async function requisicaoAutenticada(caminho, opcoes = {}) {
     });
 }
 
-export { API_URL };
+export { API_URL, ORIGEM_DISPOSITIVO };
