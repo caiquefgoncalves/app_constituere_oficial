@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: "Inter_700Bold",
         color: "#222222",
+        maxWidth: "99%"
     },
     informacoes: {
         flexDirection: "row",

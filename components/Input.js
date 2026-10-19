@@ -1,7 +1,57 @@
+
 import {StyleSheet, Text, TextInput, View} from "react-native";
 import React from "react";
 
-export default function Input({label, valor, setValor, tipo = "default", letraMaiuscula = "none", senha = false}) {
+import {
+    mascaraCPF,
+    mascaraCNPJ,
+    mascaraCPFouCNPJ,
+    mascaraRG,
+    mascaraCEP,
+    mascaraTelefone,
+    dataParaTela
+} from "../utils/mascaras";
+
+function mascaraPeloLabel(label) {
+    const l = (label || "")
+        .toString()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    if (l.includes("cpf") && l.includes("cnpj")) return mascaraCPFouCNPJ;
+    if (l.includes("cnpj")) return mascaraCNPJ;
+    if (l.includes("cpf")) return mascaraCPF;
+    if (/\brg\b/.test(l)) return mascaraRG;
+    if (/\bcep\b/.test(l)) return mascaraCEP;
+    if (/telefone|celular|whatsapp|\bfone\b/.test(l)) return mascaraTelefone;
+    if (/\bdata\b|nascimento/.test(l)) return dataParaTela;
+
+    return null;
+}
+
+
+export default function Input({
+                                  label,
+                                  valor,
+                                  setValor,
+                                  tipo = "default",
+                                  letraMaiuscula = "none",
+                                  senha = false,
+                                  mascara
+                              }) {
+    let aplicar = null;
+
+    if (!senha && mascara !== false) {
+        aplicar = typeof mascara === "function" ? mascara : mascaraPeloLabel(label);
+    }
+
+    function aoDigitar(texto) {
+        setValor(aplicar ? aplicar(texto) : texto);
+    }
+
+    const valorMostrado = aplicar ? aplicar(valor || "") : valor;
+
     return (
         <View style={styles.container}>
             <Text style={styles.label}>
@@ -10,8 +60,8 @@ export default function Input({label, valor, setValor, tipo = "default", letraMa
 
             <TextInput
                 style={styles.input}
-                value={valor}
-                onChangeText={setValor}
+                value={valorMostrado}
+                onChangeText={aoDigitar}
                 keyboardType={tipo}
                 autoCapitalize={letraMaiuscula}
                 secureTextEntry={senha}
@@ -22,7 +72,7 @@ export default function Input({label, valor, setValor, tipo = "default", letraMa
 
 const styles = StyleSheet.create({
     container: {
-      width: "100%",
+        width: "100%",
     },
 
     label: {

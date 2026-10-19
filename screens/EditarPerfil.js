@@ -29,6 +29,72 @@ import {
 
 import { API_URL } from "../services/api";
 
+/* ===================== MÁSCARAS ===================== */
+
+const apenasNumeros = (v) => (v || "").replace(/\D/g, "");
+
+function mascaraData(v) {
+    const n = apenasNumeros(v).slice(0, 8);
+    if (n.length > 4) return `${n.slice(0, 2)}/${n.slice(2, 4)}/${n.slice(4)}`;
+    if (n.length > 2) return `${n.slice(0, 2)}/${n.slice(2)}`;
+    return n;
+}
+
+function mascaraCPF(v) {
+    const n = apenasNumeros(v).slice(0, 11);
+    if (n.length > 9) return `${n.slice(0, 3)}.${n.slice(3, 6)}.${n.slice(6, 9)}-${n.slice(9)}`;
+    if (n.length > 6) return `${n.slice(0, 3)}.${n.slice(3, 6)}.${n.slice(6)}`;
+    if (n.length > 3) return `${n.slice(0, 3)}.${n.slice(3)}`;
+    return n;
+}
+
+function mascaraCNPJ(v) {
+    const n = apenasNumeros(v).slice(0, 14);
+    if (n.length > 12) return `${n.slice(0, 2)}.${n.slice(2, 5)}.${n.slice(5, 8)}/${n.slice(8, 12)}-${n.slice(12)}`;
+    if (n.length > 8) return `${n.slice(0, 2)}.${n.slice(2, 5)}.${n.slice(5, 8)}/${n.slice(8)}`;
+    if (n.length > 5) return `${n.slice(0, 2)}.${n.slice(2, 5)}.${n.slice(5)}`;
+    if (n.length > 2) return `${n.slice(0, 2)}.${n.slice(2)}`;
+    return n;
+}
+
+function mascaraRG(v) {
+    const n = (v || "").replace(/[^0-9xX]/g, "").toUpperCase().slice(0, 9);
+    if (n.length > 8) return `${n.slice(0, 2)}.${n.slice(2, 5)}.${n.slice(5, 8)}-${n.slice(8)}`;
+    if (n.length > 5) return `${n.slice(0, 2)}.${n.slice(2, 5)}.${n.slice(5)}`;
+    if (n.length > 2) return `${n.slice(0, 2)}.${n.slice(2)}`;
+    return n;
+}
+
+function mascaraCEP(v) {
+    const n = apenasNumeros(v).slice(0, 8);
+    if (n.length > 5) return `${n.slice(0, 5)}-${n.slice(5)}`;
+    return n;
+}
+
+function mascaraTelefone(v) {
+    const n = apenasNumeros(v).slice(0, 11);
+    if (n.length > 10) return `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7)}`;
+    if (n.length > 6) return `(${n.slice(0, 2)}) ${n.slice(2, 6)}-${n.slice(6)}`;
+    if (n.length > 2) return `(${n.slice(0, 2)}) ${n.slice(2)}`;
+    if (n.length > 0) return `(${n}`;
+    return "";
+}
+
+function dataParaTela(v) {
+    if (!v) return "";
+    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    return mascaraData(v);
+}
+
+function dataParaApi(v) {
+    if (!v) return "";
+    const m = String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    return v;
+}
+
+
 export default function EditarPerfil({ navigation, route }) {
     const tipoCliente = route?.params?.tipoCliente || "fisico";
     const juridico = tipoCliente === "juridico";
@@ -124,21 +190,21 @@ export default function EditarPerfil({ navigation, route }) {
                 setIdUsuario(u.id);
                 setNome(u.nome || "");
                 setEmail(u.email || "");
-                setTelefone(u.telefone || "");
-                setCpf(u.cpf || "");
-                setCnpj(u.cnpj || "");
-                setRg(u.rg || "");
+                setTelefone(mascaraTelefone(u.telefone || ""));
+                setCpf(mascaraCPF(u.cpf || ""));
+                setCnpj(mascaraCNPJ(u.cnpj || ""));
+                setRg(mascaraRG(u.rg || ""));
                 setOrgaoExpedidor(u.orgao_expedidor || "");
                 setNacionalidade(u.nacionalidade || "");
                 setEstadoCivil(u.estado_civil || "");
-                setDataNascimento(u.data_nascimento || "");
+                setDataNascimento(dataParaTela(u.data_nascimento));
                 setSexo(u.sexo || "");
                 setProfissao(u.profissao || "");
                 setCarteiraTrabalho(u.carteira_trabalho || "");
                 setSerieCarteira(u.serie_carteira || "");
                 setRazaoSocial(u.razao_social || "");
                 setNomeFantasia(u.nome_fantasia || "");
-                setCep(u.cep || "");
+                setCep(mascaraCEP(u.cep || ""));
                 setLogradouro(u.logradouro || "");
                 setNumero(u.numero || "");
                 setComplemento(u.complemento || "");
@@ -218,21 +284,21 @@ export default function EditarPerfil({ navigation, route }) {
         return {
             nome: nome || "",
             email: email || "",
-            telefone: telefone || "",
-            cpf: cpf || "",
-            cnpj: cnpj || "",
+            telefone: apenasNumeros(telefone),
+            cpf: apenasNumeros(cpf),
+            cnpj: apenasNumeros(cnpj),
             razao_social: razaoSocial || "",
             nome_fantasia: nomeFantasia || "",
-            data_nascimento: dataNascimento || "",
+            data_nascimento: dataParaApi(dataNascimento),
             sexo: sexo || "",
-            rg: rg || "",
+            rg: (rg || "").replace(/[^0-9xX]/g, "").toUpperCase(),
             orgao_expedidor: orgaoExpedidor || "",
             nacionalidade: nacionalidade || "",
             estado_civil: estadoCivil || "",
             carteira_trabalho: carteiraTrabalho || "",
             serie_carteira: serieCarteira || "",
             profissao: profissao || "",
-            cep: cep || "",
+            cep: apenasNumeros(cep),
             logradouro: logradouro || "",
             numero: numero || "",
             complemento: complemento || "",
@@ -388,14 +454,14 @@ export default function EditarPerfil({ navigation, route }) {
                                     <Input
                                         label={"Data de nascimento"}
                                         valor={dataNascimento}
-                                        setValor={setDataNascimento}
+                                        setValor={(t) => setDataNascimento(mascaraData(t))}
                                         tipo={"numeric"}
                                     />
 
                                     <Input
                                         label={"CPF"}
                                         valor={cpf}
-                                        setValor={setCpf}
+                                        setValor={(t) => setCpf(mascaraCPF(t))}
                                         tipo={"numeric"}
                                     />
 
@@ -409,7 +475,7 @@ export default function EditarPerfil({ navigation, route }) {
                                     <Input
                                         label={"RG"}
                                         valor={rg}
-                                        setValor={setRg}
+                                        setValor={(t) => setRg(mascaraRG(t))}
                                     />
 
                                     <Input
@@ -509,7 +575,7 @@ export default function EditarPerfil({ navigation, route }) {
                                     <Input
                                         label={"CNPJ"}
                                         valor={cnpj}
-                                        setValor={setCnpj}
+                                        setValor={(t) => setCnpj(mascaraCNPJ(t))}
                                         tipo={"numeric"}
                                     />
                                 </View>
@@ -533,7 +599,7 @@ export default function EditarPerfil({ navigation, route }) {
                             <Input
                                 label={"CEP"}
                                 valor={cep}
-                                setValor={setCep}
+                                setValor={(t) => setCep(mascaraCEP(t))}
                                 tipo={"numeric"}
                             />
                             <Input
@@ -592,7 +658,7 @@ export default function EditarPerfil({ navigation, route }) {
                             <Input
                                 label={"Telefone"}
                                 valor={telefone}
-                                setValor={setTelefone}
+                                setValor={(t) => setTelefone(mascaraTelefone(t))}
                                 tipo={"phone-pad"}
                             />
                             <Input

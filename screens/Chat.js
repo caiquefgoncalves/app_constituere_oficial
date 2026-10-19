@@ -10,7 +10,9 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
-    StatusBar
+    StatusBar,
+    Keyboard,
+    SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -52,6 +54,7 @@ export default function Chat({ navigation }) {
     const socketRef = useRef(null);
     const mensagensIdsRef = useRef(new Set());
     const listaRef = useRef(null);
+    const inputRef = useRef(null);
 
     const conversaRef = useRef(null);
     const usuarioIdRef = useRef(null);
@@ -130,6 +133,8 @@ export default function Chat({ navigation }) {
                             is_meu_envio: data.remetente_id === meuId
                         }];
                     });
+
+                    setTimeout(() => listaRef.current?.scrollToEnd({ animated: true }), 100);
                 }
             }
 
@@ -172,6 +177,7 @@ export default function Chat({ navigation }) {
             setMensagens(resultado.mensagens);
         }
         setCarregandoMensagens(false);
+        setTimeout(() => listaRef.current?.scrollToEnd({ animated: false }), 200);
     }
 
     useFocusEffect(
@@ -218,6 +224,7 @@ export default function Chat({ navigation }) {
     }
 
     function voltarLista() {
+        Keyboard.dismiss();
         setConversaSelecionada(null);
         setMensagens([]);
         mensagensIdsRef.current.clear();
@@ -243,6 +250,8 @@ export default function Chat({ navigation }) {
         setMensagens((prev) => [...prev, temp]);
         setNovaMensagem('');
         setEnviando(true);
+
+        setTimeout(() => listaRef.current?.scrollToEnd({ animated: true }), 100);
 
         const resultado = await enviarMensagem(conversaSelecionada.conversa_id, texto);
 
@@ -316,18 +325,18 @@ export default function Chat({ navigation }) {
 
     if (!token) {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
                 <Header navigation={navigation} />
                 <View style={styles.carregandoBox}>
                     <ActivityIndicator size="large" color="#0047AB" />
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     if (conversaSelecionada) {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#2A2929' }}>
                 <StatusBar barStyle="light-content" backgroundColor="#2A2929" />
 
                 <View style={styles.headerChat}>
@@ -348,9 +357,9 @@ export default function Chat({ navigation }) {
                 </View>
 
                 <KeyboardAvoidingView
-                    style={{ flex: 1 }}
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+                    style={{ flex: 1, backgroundColor: '#F5F7FA' }}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
                 >
                     <FlatList
                         ref={listaRef}
@@ -358,6 +367,7 @@ export default function Chat({ navigation }) {
                         keyExtractor={(item) => String(item.id)}
                         renderItem={renderMensagem}
                         contentContainerStyle={styles.listaMensagens}
+                        keyboardShouldPersistTaps="handled"
                         onContentSizeChange={() => listaRef.current?.scrollToEnd({ animated: true })}
                         onLayout={() => listaRef.current?.scrollToEnd({ animated: false })}
                         ListEmptyComponent={
@@ -371,12 +381,14 @@ export default function Chat({ navigation }) {
 
                     <View style={styles.inputArea}>
                         <TextInput
+                            ref={inputRef}
                             style={styles.input}
                             placeholder="Digite uma mensagem..."
                             placeholderTextColor="#9CA3AF"
                             value={novaMensagem}
                             onChangeText={setNovaMensagem}
                             multiline
+                            onFocus={() => setTimeout(() => listaRef.current?.scrollToEnd({ animated: true }), 200)}
                         />
                         <TouchableOpacity
                             style={[styles.btnEnviar, (!novaMensagem.trim() || enviando) && styles.btnEnviarOff]}
@@ -387,12 +399,12 @@ export default function Chat({ navigation }) {
                         </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#2A2929" />
 
             <Header navigation={navigation} />
@@ -436,6 +448,7 @@ export default function Chat({ navigation }) {
                         keyExtractor={(item) => String(item.conversa_id)}
                         renderItem={renderConversa}
                         contentContainerStyle={styles.lista}
+                        keyboardShouldPersistTaps="handled"
                     />
                 )
             )}
@@ -459,10 +472,11 @@ export default function Chat({ navigation }) {
                         keyExtractor={(item) => String(item.id)}
                         renderItem={renderAdvogado}
                         contentContainerStyle={styles.lista}
+                        keyboardShouldPersistTaps="handled"
                     />
                 )
             )}
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -529,7 +543,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 14,
-        paddingTop: Platform.OS === 'ios' ? 54 : 44,
+        paddingTop: 14,
         paddingBottom: 14,
         backgroundColor: '#2A2929',
         gap: 12,
@@ -540,7 +554,7 @@ const styles = StyleSheet.create({
     avatarHeader: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E3EDF8' },
     headerInfo: { flex: 1 },
     headerNome: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
-    listaMensagens: { padding: 16, gap: 8 },
+    listaMensagens: { padding: 16, gap: 8, paddingBottom: 20 },
     msgLinha: { flexDirection: 'row' },
     msgDireita: { justifyContent: 'flex-end' },
     msgEsquerda: { justifyContent: 'flex-start' },

@@ -10,7 +10,7 @@ export default function CardValores({ titulo, valor, quantidade}) {
     return (
         <View style={styles.card}>
             <Text style={[styles.texto, { color: corStatus }]}>{titulo}</Text>
-            <Text style={styles.numero}>R$ {valor}</Text>
+            <Text style={styles.numero}>{valor}</Text>
         </View>
     );
 }
