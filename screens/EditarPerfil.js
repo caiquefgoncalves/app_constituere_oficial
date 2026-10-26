@@ -29,7 +29,6 @@ import {
 
 import { API_URL } from "../services/api";
 
-/* ===================== MÁSCARAS ===================== */
 
 const apenasNumeros = (v) => (v || "").replace(/\D/g, "");
 
