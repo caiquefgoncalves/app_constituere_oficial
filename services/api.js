@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
 
-const API_URL = 'http://10.217.244.222:5000';
+const API_URL = 'http://10.92.11.21:5000';
 const ORIGEM_DISPOSITIVO = Device.deviceName || Device.modelName || 'Celular (Expo)';
 
 export async function requisicao(caminho, opcoes = {}) {
